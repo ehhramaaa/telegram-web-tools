@@ -111,7 +111,6 @@ func SaveFileTxt(filePath string, data string) error {
 		return err
 	}
 
-	PrettyLog("success", fmt.Sprintf("Data berhasil disimpan ke %s", filePath))
 	return nil
 }
 

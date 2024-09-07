@@ -67,26 +67,28 @@ func GetQueryData() {
 			break
 		}
 
-		isStop := false
+		if choice != 3 {
+			isStop := false
 
-		for !isStop {
-			choice := strings.ToLower(strings.TrimSpace(helper.InputTerminal(fmt.Sprintf("Is First Time Launch Bot %v ? (y/n): ", botUsername))))
+			for !isStop {
+				choice := strings.ToLower(strings.TrimSpace(helper.InputTerminal(fmt.Sprintf("Is First Time Launch Bot %v ? (y/n): ", botUsername))))
 
-			switch choice {
-			case "n":
-				isFirstLaunch = false
-				isStop = true
-			case "y":
-				if len(config.Strings("bot.selector")) >= 1 {
-					isFirstLaunch = true
-				} else {
-					helper.PrettyLog("error", "Value Of Bot Selector Is Null, Please Check Your Config.yml")
-					return
+				switch choice {
+				case "n":
+					isFirstLaunch = false
+					isStop = true
+				case "y":
+					if len(config.Strings("bot.selector")) >= 1 {
+						isFirstLaunch = true
+					} else {
+						helper.PrettyLog("error", "If First Time Launch Bot You Must Add Selector Bot, Please Check Your Config.yml")
+						return
+					}
+
+					isStop = true
+				default:
+					helper.PrettyLog("error", "Pilihan tidak valid")
 				}
-
-				isStop = true
-			default:
-				helper.PrettyLog("error", "Pilihan tidak valid")
 			}
 		}
 
@@ -94,14 +96,10 @@ func GetQueryData() {
 		case 1:
 			bot.GetAllAccount(botUsername, refUrl, isFirstLaunch, localStoragePath, queryDataPath, files)
 		case 2:
-			session := strings.TrimSpace(helper.InputTerminal("Masukan Nama File Session : "))
+			session := helper.InputTerminal("Masukan Nama File Session (Without .json) : ")
 
 			if !strings.Contains(session, ".json") {
 				session = session + ".json"
-			}
-
-			if !strings.Contains(session, "+62") {
-				session = "+62" + session
 			}
 
 			if helper.CheckFileOrFolder(fmt.Sprintf("%v/%v", localStoragePath, session)) {

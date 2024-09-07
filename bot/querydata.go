@@ -24,6 +24,11 @@ type SessionStorage struct {
 	QueryData string
 }
 
+type MergeSessionStorage struct {
+	Username  string
+	QueryData string
+}
+
 func parseText(text string) map[string]string {
 	// Buat map untuk menyimpan hasil parsing
 	result := make(map[string]string)
@@ -273,7 +278,6 @@ func GetOneAccount(session string, botUsername string, refUrl string, isFirstLau
 	var sessionStorage []SessionStorage
 
 	launchOptions := launcher.New().
-		Bin("C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe").
 		Headless(true).
 		MustLaunch()
 
@@ -483,9 +487,11 @@ func GetOneAccount(session string, botUsername string, refUrl string, isFirstLau
 
 func MergeData(botUsername string, queryDataPath string, mergePath string, mergeFileName string, files []fs.DirEntry) {
 	// Inisialisasi map untuk menampung hasil penggabungan data
-	var mergedData []SessionStorage
+	var mergedData []MergeSessionStorage
 
 	for _, file := range files {
+		var session MergeSessionStorage
+
 		// Baca data JSON dari file
 		account, err := helper.ReadFileJson(filepath.Join(queryDataPath+"/"+botUsername, file.Name()))
 		if err != nil {
@@ -494,38 +500,35 @@ func MergeData(botUsername string, queryDataPath string, mergePath string, merge
 		}
 
 		switch v := account.(type) {
-		case []map[string]string:
+		case []map[string]interface{}:
 			// Jika data adalah array of maps
 			for _, acc := range v {
-				// Konversi map[string]string ke queryData
 				for key, value := range acc {
 					if key == "QueryData" {
-						mergedData = append(mergedData, SessionStorage{
-							QueryData: value,
-						})
-					} else if key == "Username" {
-						mergedData = append(mergedData, SessionStorage{
-							Username: value,
-						})
+						session.QueryData = value.(string)
+					}
+
+					if key == "Username" {
+						session.Username = value.(string)
 					}
 				}
 			}
-		case map[string]string:
+		case map[string]interface{}:
 			// Jika data adalah single map
 			for key, value := range v {
 				if key == "QueryData" {
-					mergedData = append(mergedData, SessionStorage{
-						QueryData: value,
-					})
-				} else if key == "Username" {
-					mergedData = append(mergedData, SessionStorage{
-						Username: value,
-					})
+					session.QueryData = value.(string)
+				}
+
+				if key == "Username" {
+					session.Username = value.(string)
 				}
 			}
 		default:
 			helper.PrettyLog("error", "Unknown data type")
 		}
+
+		mergedData = append(mergedData, session)
 	}
 
 	// Check Folder Query Data
@@ -536,6 +539,8 @@ func MergeData(botUsername string, queryDataPath string, mergePath string, merge
 	// Save Query Data To Json
 	helper.SaveFileJson(fmt.Sprintf("%v/%v/%v/%v.json", queryDataPath, botUsername, mergePath, mergeFileName), mergedData)
 
+	helper.PrettyLog("success", fmt.Sprintf("Merge Query Data Berhasil Di Simpan Di %v/%v/%v/%v.json", queryDataPath, botUsername, mergePath, mergeFileName))
+
 	// Save Query Data To Txt
 	for _, value := range mergedData {
 		err := helper.SaveFileTxt(fmt.Sprintf("%v/%v/%v/%v.txt", queryDataPath, botUsername, mergePath, mergeFileName), value.QueryData)
@@ -544,5 +549,5 @@ func MergeData(botUsername string, queryDataPath string, mergePath string, merge
 		}
 	}
 
-	helper.PrettyLog("success", fmt.Sprintf("Query Data Berhasil Di Simpan Di %v/%v/%v/%v.json", queryDataPath, botUsername, mergePath, mergeFileName))
+	helper.PrettyLog("success", fmt.Sprintf("Merge Query Data Berhasil Di Simpan Di %v/%v/%v/%v.txt", queryDataPath, botUsername, mergePath, mergeFileName))
 }
