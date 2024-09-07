@@ -33,7 +33,7 @@ func GetQueryData() {
 
 		fmt.Println("<=====================[Get Query Data Tools]=====================>")
 
-		var isAutoRef bool
+		var isFirstLaunch bool
 
 		botUsername := config.String("bot.username")
 		refUrl := config.String("bot.ref-url")
@@ -74,11 +74,11 @@ func GetQueryData() {
 
 			switch choice {
 			case "n":
-				isAutoRef = false
+				isFirstLaunch = false
 				isStop = true
 			case "y":
 				if len(config.Strings("bot.selector")) >= 1 {
-					isAutoRef = true
+					isFirstLaunch = true
 				} else {
 					helper.PrettyLog("error", "Value Of Bot Selector Is Null, Please Check Your Config.yml")
 					return
@@ -92,7 +92,7 @@ func GetQueryData() {
 
 		switch choice {
 		case 1:
-			bot.GetAllAccount(botUsername, refUrl, isAutoRef, localStoragePath, queryDataPath, files)
+			bot.GetAllAccount(botUsername, refUrl, isFirstLaunch, localStoragePath, queryDataPath, files)
 		case 2:
 			session := strings.TrimSpace(helper.InputTerminal("Masukan Nama File Session : "))
 
@@ -105,7 +105,7 @@ func GetQueryData() {
 			}
 
 			if helper.CheckFileOrFolder(fmt.Sprintf("%v/%v", localStoragePath, session)) {
-				bot.GetOneAccount(session, botUsername, refUrl, isAutoRef, localStoragePath, queryDataPath)
+				bot.GetOneAccount(session, botUsername, refUrl, isFirstLaunch, localStoragePath, queryDataPath)
 			} else {
 				helper.PrettyLog("error", fmt.Sprintf("File Sessions %v Not Found", session))
 			}

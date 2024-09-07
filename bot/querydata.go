@@ -48,7 +48,7 @@ func parseText(text string) map[string]string {
 	return result
 }
 
-func GetAllAccount(botUsername string, refUrl string, isAutoRef bool, localStoragePath string, queryDataPath string, files []fs.DirEntry) {
+func GetAllAccount(botUsername string, refUrl string, isFirstLaunch bool, localStoragePath string, queryDataPath string, files []fs.DirEntry) {
 	for _, file := range files {
 		fmt.Printf("<=====================[%v]=====================>\n", file.Name())
 
@@ -138,7 +138,7 @@ func GetAllAccount(botUsername string, refUrl string, isAutoRef bool, localStora
 
 			iframePage := iframe.MustFrame()
 
-			if isAutoRef {
+			if isFirstLaunch {
 				selectors := config.Strings("bot.selector")
 
 				helper.PrettyLog("info", "Process Clicking Selector Bot...")
@@ -267,7 +267,7 @@ func GetAllAccount(botUsername string, refUrl string, isAutoRef bool, localStora
 	}
 }
 
-func GetOneAccount(session string, botUsername string, refUrl string, isAutoRef bool, localStoragePath string, queryDataPath string) {
+func GetOneAccount(session string, botUsername string, refUrl string, isFirstLaunch bool, localStoragePath string, queryDataPath string) {
 	fmt.Printf("<=====================[%v]=====================>\n", session)
 
 	var sessionStorage []SessionStorage
@@ -358,7 +358,7 @@ func GetOneAccount(session string, botUsername string, refUrl string, isAutoRef 
 
 		iframePage.MustWaitDOMStable()
 
-		if isAutoRef {
+		if isFirstLaunch {
 			selectors := config.Strings("bot.selector")
 
 			helper.PrettyLog("info", "Process Clicking Selector Bot...")
