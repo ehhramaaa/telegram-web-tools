@@ -41,3 +41,12 @@ func SendMessage(page *rod.Page, text string) {
 func GetLastChat(page *rod.Page) string {
 	return core.GetText(page, "div.bubbles-group.bubbles-group-last > div > div > div > div > span.translatable-message")
 }
+
+func PopupLaunchBot(page *rod.Page) {
+	// Click Popup Launch If Found
+	isPopupLaunch := core.CheckElement(page, "body > div.popup.popup-peer.popup-confirmation.active > div > div.popup-buttons > button:nth-child(1)")
+
+	if isPopupLaunch {
+		core.ClickElement(page, "body > div.popup.popup-peer.popup-confirmation.active > div > div.popup-buttons > button:nth-child(1)")
+	}
+}

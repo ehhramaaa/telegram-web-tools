@@ -120,15 +120,12 @@ func GetAllAccount(botUsername string, refUrl string, isAutoRef bool, localStora
 		// Send Message Ref Url
 		SendMessage(page, refUrl)
 
+		time.Sleep(3 * time.Second)
+
 		// Click Launch App
 		core.ClickElement(page, fmt.Sprintf(`a.anchor-url[href="%v"]`, refUrl))
 
-		// Click Popup Launch If Found
-		isPopupLaunch := core.CheckElement(page, "body > div.popup.popup-peer.popup-confirmation.active > div > div.popup-buttons > button:nth-child(1)")
-
-		if isPopupLaunch {
-			core.ClickElement(page, "body > div.popup.popup-peer.popup-confirmation.active > div > div.popup-buttons > button:nth-child(1)")
-		}
+		PopupLaunchBot(page)
 
 		time.Sleep(3 * time.Second)
 
@@ -141,14 +138,16 @@ func GetAllAccount(botUsername string, refUrl string, isAutoRef bool, localStora
 
 			iframePage := iframe.MustFrame()
 
-			iframePage.MustWaitDOMStable()
-
 			if isAutoRef {
 				selectors := config.Strings("bot.selector")
 
 				helper.PrettyLog("info", "Process Clicking Selector Bot...")
 
 				for _, selector := range selectors {
+					iframePage.MustWaitDOMStable()
+					iframePage.MustWaitNavigation()
+					iframePage.MustWaitRequestIdle()
+
 					core.ClickElement(iframePage, selector)
 					time.Sleep(2 * time.Second)
 					iframePage.MustWaitDOMStable()
@@ -158,6 +157,36 @@ func GetAllAccount(botUsername string, refUrl string, isAutoRef bool, localStora
 
 				time.Sleep(3 * time.Second)
 			}
+
+			helper.PrettyLog("info", "Relaunch Bot")
+
+			// Reload Page
+			page.MustReload()
+
+			page.MustWaitLoad()
+
+			// Search Bot
+			SearchBot(page, botUsername)
+
+			// Click Launch App
+			core.ClickElement(page, "div.new-message-bot-commands")
+
+			PopupLaunchBot(page)
+
+			time.Sleep(3 * time.Second)
+
+			isIframe = core.CheckElement(page, ".payment-verification")
+
+			if !isIframe {
+				helper.PrettyLog("error", "Failed To Launch Bot")
+				return
+			}
+
+			iframe = page.MustElement(".payment-verification")
+
+			iframePage = iframe.MustFrame()
+
+			iframePage.MustWaitDOMStable()
 
 			helper.PrettyLog("info", "Process Get Session Local Storage...")
 
@@ -244,6 +273,7 @@ func GetOneAccount(session string, botUsername string, refUrl string, isAutoRef 
 	var sessionStorage []SessionStorage
 
 	launchOptions := launcher.New().
+		Bin("C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe").
 		Headless(true).
 		MustLaunch()
 
@@ -308,15 +338,12 @@ func GetOneAccount(session string, botUsername string, refUrl string, isAutoRef 
 	// Send Message Ref Url
 	SendMessage(page, refUrl)
 
+	time.Sleep(3 * time.Second)
+
 	// Click Launch App
 	core.ClickElement(page, fmt.Sprintf(`a.anchor-url[href="%v"]`, refUrl))
 
-	// Click Popup Launch If Found
-	isPopupLaunch := core.CheckElement(page, "body > div.popup.popup-peer.popup-confirmation.active > div > div.popup-buttons > button:nth-child(1)")
-
-	if isPopupLaunch {
-		core.ClickElement(page, "body > div.popup.popup-peer.popup-confirmation.active > div > div.popup-buttons > button:nth-child(1)")
-	}
+	PopupLaunchBot(page)
 
 	time.Sleep(3 * time.Second)
 
@@ -346,6 +373,36 @@ func GetOneAccount(session string, botUsername string, refUrl string, isAutoRef 
 
 			time.Sleep(3 * time.Second)
 		}
+
+		helper.PrettyLog("info", "Relaunch Bot")
+
+		// Reload Page
+		page.MustReload()
+
+		page.MustWaitLoad()
+
+		// Search Bot
+		SearchBot(page, botUsername)
+
+		// Click Launch App
+		core.ClickElement(page, "div.new-message-bot-commands")
+
+		PopupLaunchBot(page)
+
+		time.Sleep(3 * time.Second)
+
+		isIframe = core.CheckElement(page, ".payment-verification")
+
+		if !isIframe {
+			helper.PrettyLog("error", "Failed To Launch Bot")
+			return
+		}
+
+		iframe = page.MustElement(".payment-verification")
+
+		iframePage = iframe.MustFrame()
+
+		iframePage.MustWaitDOMStable()
 
 		helper.PrettyLog("info", "Process Get Session Local Storage...")
 

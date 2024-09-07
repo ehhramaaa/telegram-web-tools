@@ -70,7 +70,7 @@ func GetQueryData() {
 		isStop := false
 
 		for !isStop {
-			choice := strings.ToLower(strings.TrimSpace(helper.InputTerminal("With Auto Ref ? (y/n): ")))
+			choice := strings.ToLower(strings.TrimSpace(helper.InputTerminal(fmt.Sprintf("Is First Time Launch Bot %v ? (y/n): ", botUsername))))
 
 			switch choice {
 			case "n":
@@ -115,7 +115,7 @@ func GetQueryData() {
 
 		isInvalid := true
 		for isInvalid {
-			choice := strings.ToLower(strings.TrimSpace(helper.InputTerminal("Repeat Tools ? (y/n): ")))
+			choice := strings.ToLower(strings.TrimSpace(helper.InputTerminal("Repeat Query Data Tools ? (y/n): ")))
 
 			switch choice {
 			case "n":

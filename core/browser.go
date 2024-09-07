@@ -21,7 +21,7 @@ func CheckElement(page *rod.Page, element string) bool {
 
 	sleep := func() utils.Sleeper {
 		return func(context.Context) error {
-			time.Sleep(5 * time.Second)
+			time.Sleep(3 * time.Second)
 			return nil
 		}
 	}

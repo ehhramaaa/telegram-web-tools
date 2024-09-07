@@ -35,14 +35,27 @@ func InputTerminal(prompt string) string {
 }
 
 func SaveFileJson(filePath string, data interface{}) error {
-	file, err := json.MarshalIndent(data, "", "  ")
+	// Membuka file untuk menulis data JSON
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Membuat encoder dengan SetEscapeHTML(false)
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")  // Mengatur indentasi
+	encoder.SetEscapeHTML(false) // Nonaktifkan HTML escaping
+
+	// Encode data ke file
+	err = encoder.Encode(data)
 	if err != nil {
 		return err
 	}
 
 	PrettyLog("success", fmt.Sprintf("Data berhasil disimpan ke %s", filePath))
 
-	return os.WriteFile(filePath, file, 0644)
+	return nil
 }
 
 func ReadFileJson(filePath string) (interface{}, error) {
