@@ -1,0 +1,16 @@
+telegram:
+  url: https://web.telegram.org/k/
+  login:
+    password: 
+
+folder-name:
+  local-storage: sessions
+  query-data: querydata
+  merge-query-data: merge
+
+bot:
+  username: 
+  ref-url: 
+  selector:
+    - "#root > div > div > div:nth-child(2) > button"
+    - "#root > div > div > div:nth-child(2) > button"
