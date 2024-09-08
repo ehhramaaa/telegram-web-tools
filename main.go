@@ -14,6 +14,7 @@ import (
 )
 
 func main() {
+
 	// Load Config
 	config.AddDriver(yaml.Driver)
 
@@ -30,7 +31,7 @@ func main() {
 			helper.PrettyLog("1", "Get Local Storage")
 		},
 		func() {
-			helper.PrettyLog("2", "Auto Ref With Get Query Data Tools")
+			helper.PrettyLog("2", "Get Query Data Tools")
 		},
 	}
 
@@ -39,7 +40,8 @@ func main() {
 	for isRepeat {
 		helper.ClearTerminal()
 
-		fmt.Println("<=====================[Telegram Web Tools]=====================>")
+		fmt.Println(`✩░▒▓▆▅▃▂▁𝐭𝐞𝐥𝐞𝐠𝐫𝐚𝐦 𝐰𝐞𝐛 𝐭𝐨𝐨𝐥𝐬▁▂▃▅▆▓▒░✩`)
+		fmt.Println("ρσɯҽɾҽԃ Ⴆყ : ԋσʅყƈαɳ")
 
 		for _, tool := range tools {
 			tool()
