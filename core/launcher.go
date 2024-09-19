@@ -52,7 +52,7 @@ func getLocalStorage() {
 			continue
 		}
 
-		if choice == "n" {
+		if choice == "n" || choice == "N" {
 			isRepeat = false
 		}
 	}
@@ -306,6 +306,10 @@ func getQueryData() {
 }
 
 func ProcessChoice(choice int) {
+	if !helper.CheckFileOrFolder("./output") {
+		os.Mkdir("./output", 0755)
+	}
+
 	if choice == 0 {
 		helper.PrettyLog("success", "Exiting Program...")
 		os.Exit(0)
