@@ -20,6 +20,7 @@
 |                  Feature                  | Supported |
 | :---------------------------------------: | :-------: |
 |          Auto Get Local Storage           |    ✅     |
+|            Auto Get Query Data            |    ✅     |
 |       Auto Start Bot With Auto Ref        |    ✅     |
 |             Auto Set Username             |    ⏳     |
 |            Auto Set Last Name             |    ⏳     |
@@ -28,14 +29,15 @@
 
 ## [Settings](https://github.com/ehhramaaa/telegram-web-tools/blob/main/config.yml)
 
-|                       Settings                        |                                            Description                                            |
-| :---------------------------------------------------: | :-----------------------------------------------------------------------------------------------: |
-|                   **BOT_USERNAME**                    |                           For Get Query Data / Start Bot With Auto Ref                            |
-|                    **MAX_THREAD**                     |                                      Max Client Run Parallel                                      |
-|             **GET_LOCAL_STORAGE.COUNTRY**             |                     country name of the number you want to take local storage                     |
-|            **GET_LOCAL_STORAGE.PASSWORD**             | Password for number you use. if your number > 1 you must make all your account passwords the same |
-|          **START_BOT_WITH_AUTO_REF.REF_URL**          |                                   Ref Url Of Your Main Account                                    |
-| **START_BOT_WITH_AUTO_REF.FIRST_LAUNCH_BOT_SELECTOR** |                            All Selector Must Click In First Launch Bot                            |
+|                       Settings                        |                                    Description                                    |
+| :---------------------------------------------------: | :-------------------------------------------------------------------------------: |
+|                   **BOT_USERNAME**                    |                   For get query data & start bot with auto ref                    |
+|                    **MAX_THREAD**                     |                     Max client run parallel at the same time                      |
+|                     **HEADLESS**                      |                     false = browser open, true = browser hide                     |
+|             **GET_LOCAL_STORAGE.COUNTRY**             |             Country name of the number you want to get local storage              |
+|            **GET_LOCAL_STORAGE.PASSWORD**             | Password for the number you use, or you can put "" for input password in terminal |
+|          **START_BOT_WITH_AUTO_REF.REF_URL**          |                         Ref bot url of your main account                          |
+| **START_BOT_WITH_AUTO_REF.FIRST_LAUNCH_BOT_SELECTOR** |                   All clickable selector when first launch bot                    |
 
 ## Prerequisites 📚
 
@@ -84,10 +86,13 @@ chmod +x telegramWebTools
 ```
 
 # Get Local Storage Session Demo
+
 ![demo](https://raw.githubusercontent.com/ehhramaaa/telegram-web-tools/main/demo/Screenshot_8.png)
 
 # Start Bot With Auto Ref Demo
+
 ![demo](https://raw.githubusercontent.com/ehhramaaa/telegram-web-tools/main/demo/Image.png)
 
 # Get Query Data Tools Demo
+
 ![demo](https://raw.githubusercontent.com/ehhramaaa/telegram-web-tools/main/demo/query.png)

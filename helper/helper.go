@@ -11,10 +11,6 @@ import (
 	"strings"
 )
 
-func PointerString(s string) *string {
-	return &s
-}
-
 func ReadFileDir(path string) []fs.DirEntry {
 	files, err := os.ReadDir(path)
 	if err != nil {
@@ -87,6 +83,30 @@ func ReadFileJson(filePath string) (interface{}, error) {
 	return nil, fmt.Errorf("failed to unmarshal JSON from file %s", filePath)
 }
 
+func ReadFileTxt(filePath string) ([]string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var lines []string
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line != "" {
+			lines = append(lines, line)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return lines, nil
+}
+
 func SaveFileTxt(filePath string, data string) error {
 	// Cek apakah file sudah ada
 	_, err := os.Stat(filePath)
@@ -138,4 +158,9 @@ func GetTextAfterKey(urlData, key string) (string, error) {
 	}
 
 	return urlData[startIndex : startIndex+endIndex], nil
+}
+
+func ClearInputTerminal() {
+	reader := bufio.NewReader(os.Stdin)
+	_, _ = reader.ReadString('\n')
 }

@@ -11,6 +11,8 @@ import (
 	"github.com/go-rod/rod/lib/utils"
 )
 
+// Todo
+
 func checkElement(page *rod.Page, selector string) bool {
 	defer func() {
 		if r := recover(); r != nil {

@@ -1,364 +1,319 @@
 package core
 
 import (
-	"bufio"
-	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"sync"
 	"telegram-web/helper"
 	"time"
 
 	"github.com/go-rod/rod"
-	"github.com/go-rod/rod/lib/proto"
+	"github.com/go-rod/rod/lib/launcher"
 	"github.com/gookit/config/v2"
 )
 
-var sessionStorage []string
+func listAccount(files []fs.DirEntry) int {
+	var selectAccount int
+	filesPerBatch := 10
+	totalFiles := len(files)
 
-func processGetLocalStorage(browser *rod.Browser, passwordAccount string, loginUrl string, sessionsPath string, country string) {
-	var phone, otpCode string
+	helper.ClearInputTerminal()
 
-	page := browser.MustPage()
+	for index := 0; index < totalFiles; index += filesPerBatch {
+		var input string
 
-	navigate(page, loginUrl)
-
-	reader := bufio.NewReader(os.Stdin)
-	_, _ = reader.ReadString('\n')
-
-	isStop := false
-	for !isStop {
-		// Click Login By Phone
-		clickElement(page, "#auth-qr-form > div > button")
-
-		// Input Country
-		inputText(page, country, "#sign-in-phone-code")
-
-		time.Sleep(1 * time.Second)
-
-		// Select Country
-		clickElement(page, "#auth-phone-number-form > div > form > div.DropdownMenu.CountryCodeInput > div.Menu.compact.CountryCodeInput > div.bubble.menu-container.custom-scroll.opacity-transition.fast.left.top.shown.open > div")
-
-		// Input Number In Terminal
-		phone = strings.TrimSpace(helper.InputTerminal("Input Phone Number (Without +): "))
-		if strings.Contains(phone, "+") {
-			phone = strings.TrimPrefix(phone, "+")
+		// Display files in batches of 10
+		for i := index; i < index+filesPerBatch && i < totalFiles; i++ {
+			helper.PrettyLog(fmt.Sprintf("%v", i+1), fmt.Sprintf("%v", files[i].Name()))
 		}
 
-		// Input Phone Number
-		inputText(page, phone, "#sign-in-phone-number")
+		helper.PrettyLog("input", "Select Account (or press 'N' to see more): ")
 
-		time.Sleep(1 * time.Second)
+		// Read user input
+		_, err := fmt.Scan(&input)
 
-		// Click Next
-		clickElement(page, "#auth-phone-number-form > div > form > button:nth-child(4)")
+		// Check if input is "N" (case-insensitive) to continue showing more files
+		if err != nil || input == "n" || input == "N" {
+			// If we're at the last batch, notify the user and stop asking
+			if index+filesPerBatch >= totalFiles {
+				helper.PrettyLog("info", "No more files to display.")
+			} else {
+				// Continue to next batch
+				continue
+			}
+		}
 
-		time.Sleep(3 * time.Second)
+		// Convert input to integer for file selection
+		selectAccount, err := strconv.Atoi(input)
+		if err != nil || selectAccount <= 0 || selectAccount >= totalFiles+1 {
+			helper.PrettyLog("error", "Invalid selection. Please try again.")
+			return 0
+		}
+	}
 
-		isPhoneValid := getText(page, "#auth-phone-number-form > div > form > div.input-group.touched.with-label > label")
+	return selectAccount
+}
 
-		if isPhoneValid == "Invalid phone number." {
-			helper.PrettyLog("error", "Phone Number Invalid, Please Try Again...")
-			page.MustReload()
-			page.MustWaitLoad()
+func processAccount(semaphore chan struct{}, wg *sync.WaitGroup, file fs.DirEntry, localStoragePath string, queryDataPath string) {
+	botUsername := config.String("BOT_USERNAME")
+	refUrl := config.String("START_BOT_WITH_AUTO_REF.REF_URL")
+
+	defer wg.Done()
+	semaphore <- struct{}{}
+
+	extensionPath, _ := filepath.Abs("./extension/mini-app-android-spoof")
+
+	launchOptions := launcher.New().
+		Set("load-extension", extensionPath).
+		Headless(isHeadless).
+		MustLaunch()
+
+	browser := rod.New().ControlURL(launchOptions).MustConnect()
+
+	defer browser.MustClose()
+
+	client := &Client{
+		phoneNumber: strings.TrimSuffix(file.Name(), ".json"),
+		Browser:     browser,
+	}
+
+	helper.PrettyLog("info", fmt.Sprintf("| %s | Start Processing Account...", client.phoneNumber))
+
+	switch selectedTools {
+	case 2:
+		client.processStartBotWithAutoRef(file, localStoragePath, botUsername, refUrl)
+	case 3:
+		client.processGetQueryData(file, localStoragePath, queryDataPath, botUsername)
+	}
+
+	helper.PrettyLog("info", fmt.Sprintf("| %s | Launch Bot Finished...", client.phoneNumber))
+
+	<-semaphore
+}
+
+func getLocalStorage() {
+	isRepeat := true
+	for isRepeat {
+		helper.ClearTerminal()
+		fmt.Println("<=====================[Get Local Storage Session]=====================>")
+		localStoragePath := "./output/local-storage"
+		countryAccount := config.String("GET_LOCAL_STORAGE.COUNTRY")
+		passwordAccount := config.String("GET_LOCAL_STORAGE.PASSWORD")
+
+		launchOptions := launcher.New().
+			Headless(isHeadless).
+			MustLaunch()
+
+		browser := rod.New().ControlURL(launchOptions).MustConnect()
+
+		defer browser.MustClose()
+
+		client := &Client{
+			Browser: browser,
+		}
+
+		client.processGetLocalStorage(passwordAccount, localStoragePath, countryAccount)
+
+		browser.MustClose()
+
+		var choice string
+
+		helper.PrettyLog("input", "Repeat Program ? (y/n): ")
+
+		_, err := fmt.Scan(&choice)
+		if err != nil || choice != "y" || choice != "n" {
+			helper.PrettyLog("error", "Invalid selection")
 			continue
 		}
 
-		if checkElement(page, "#sign-in-code") {
-			// Input Otp In Terminal
-			otpCode = strings.TrimSpace(helper.InputTerminal("Input Otp Code: "))
-
-			if len(otpCode) < 5 || len(otpCode) > 5 {
-				helper.PrettyLog("error", "Otp Code Must 5 Digit Number, Please Try Again...")
-				continue
-			}
-
-			time.Sleep(1 * time.Second)
-
-			// Input Otp Code
-			inputText(page, otpCode, "#sign-in-code")
-
-			time.Sleep(2 * time.Second)
-
-			helper.PrettyLog("info", "Check Otp Code...")
-
-			// Get Validation
-			isOtpValid := getText(page, "#auth-code-form > div > div.input-group.with-label > label")
-
-			if isOtpValid == "Invalid code." {
-				helper.PrettyLog("error", "Otp Code Invalid, Please Try Again...")
-				page.MustReload()
-				page.MustWaitLoad()
-				continue
-			} else {
-				isStop = true
-			}
-		} else {
-			helper.PrettyLog("warning", "Selector Input Otp Not Found")
+		if choice == "n" || choice == "N" {
+			isRepeat = false
 		}
-	}
-
-	helper.PrettyLog("info", "Check Account Password...")
-
-	// Check Account Have Password Or Not
-	isHavePassword := checkElement(page, "#sign-in-password")
-
-	if isHavePassword {
-		if passwordAccount == "" {
-			passwordAccount = strings.TrimSpace(helper.InputTerminal("Input Password: "))
-		}
-		// Input Password
-		inputText(page, passwordAccount, "#sign-in-password")
-
-		// Click Next
-		clickElement(page, "form > button")
-	} else {
-		helper.PrettyLog("warning", fmt.Sprintf("Account %v Not Have Password...", phone))
-	}
-
-	helper.PrettyLog("success", fmt.Sprintf("Login Account %v Successfully, Sleep 5s Before Get Local Storage...", phone))
-
-	time.Sleep(5 * time.Second)
-
-	navigate(page, "https://web.telegram.org/k/")
-
-	// Extract local storage data
-	localStorageData := page.MustEval(`() => JSON.stringify(localStorage);`).String()
-
-	var telegramData map[string]interface{}
-
-	if err := json.Unmarshal([]byte(localStorageData), &telegramData); err != nil {
-		helper.PrettyLog("error", fmt.Sprintf("Failed to unmarshal localStorage data: %v", err))
-		return
-	}
-
-	filePath := fmt.Sprintf("%s/%s.json", sessionsPath, phone)
-
-	var existingData []map[string]interface{}
-
-	// Check Folder Session
-	if !helper.CheckFileOrFolder(fmt.Sprintf("%v", sessionsPath)) {
-		os.Mkdir(fmt.Sprintf("%v", sessionsPath), 0755)
-	}
-
-	// Baca file JSON jika ada
-	if helper.CheckFileOrFolder(filePath) {
-		_, err := helper.ReadFileJson(filePath)
-		if err != nil {
-			helper.PrettyLog("error", fmt.Sprintf("Failed to read file: %v", err))
-			return
-		}
-	}
-
-	// Tambahkan data baru ke data yang ada
-	existingData = append(existingData, telegramData)
-
-	// Simpan data ke file JSON
-	if err := helper.SaveFileJson(filePath, existingData); err != nil {
-		helper.PrettyLog("error", fmt.Sprintf("Failed to save file: %v", err))
-		return
-	}
-
-	helper.PrettyLog("success", fmt.Sprintf("Data berhasil disimpan ke %s", filePath))
-}
-
-func processGetQueryData(browser *rod.Browser, file fs.DirEntry, localStoragePath string, botUsername string) {
-	account, err := helper.ReadFileJson(filepath.Join(localStoragePath, file.Name()))
-	if err != nil {
-		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to read file %s: %v", phoneNumber, file.Name(), err))
-		return
-	}
-
-	// Membuka halaman kosong terlebih dahulu
-	page := browser.MustPage()
-	navigate(page, "https://web.telegram.org/k/")
-
-	page.MustWaitLoad()
-
-	time.Sleep(2 * time.Second)
-
-	// Evaluasi JavaScript untuk menyimpan data ke localStorage
-	switch v := account.(type) {
-	case []map[string]interface{}:
-		// Jika data adalah array of maps
-		for _, acc := range v {
-			for key, value := range acc {
-				page.Eval(fmt.Sprintf(`localStorage.setItem('%s', '%s');`, key, value))
-			}
-		}
-	case map[string]interface{}:
-		// Jika data adalah single map
-		for key, value := range v {
-			page.Eval(fmt.Sprintf(`localStorage.setItem('%s', '%s');`, key, value))
-		}
-	default:
-		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to Evaluate Local Storage: Unknown Data Type", phoneNumber))
-		return
-	}
-
-	helper.PrettyLog("success", fmt.Sprintf("| %s | Local storage successfully set. Navigating to Telegram Web...", phoneNumber))
-
-	time.Sleep(2 * time.Second)
-
-	// Reload Page
-	page.MustReload()
-	page.MustWaitLoad()
-
-	// Search Bot
-	searchBot(page, botUsername)
-
-	// Click Launch App
-	clickElement(page, "div.new-message-bot-commands")
-
-	popupLaunchBot(page)
-
-	time.Sleep(2 * time.Second)
-
-	isIframe := checkElement(page, ".payment-verification")
-
-	if !isIframe {
-		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed To Launch Bot: Iframe Not Detected", phoneNumber))
-		return
-	}
-
-	iframe := page.MustElement(".payment-verification")
-
-	iframePage := iframe.MustFrame()
-
-	iframePage.MustWaitDOMStable()
-
-	helper.PrettyLog("info", fmt.Sprintf("| %s | Process Get Session Local Storage...", phoneNumber))
-
-	// Mengeksekusi JavaScript untuk mendapatkan nilai dari sessiontorage
-	res, err := iframePage.Evaluate(rod.Eval(`() => {
-			let initParams = sessionStorage.getItem("__telegram__initParams");
-			if (initParams) {
-				let parsedParams = JSON.parse(initParams);
-				return parsedParams.tgWebAppData;
-			}
-		
-			initParams = sessionStorage.getItem("telegram-apps/launch-params");
-			if (initParams) {
-				let parsedParams = JSON.parse(initParams);
-				return parsedParams;
-			}
-		
-			return null;
-		}`))
-
-	if err != nil {
-		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to evaluate script: %v", phoneNumber, err))
-		return
-	}
-
-	var queryData string
-
-	if strings.Contains(res.Value.String(), "tgWebAppData=") {
-		queryParamsString, err := helper.GetTextAfterKey(res.Value.String(), "tgWebAppData=")
-		if err != nil {
-			helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to get text after key tgWebAppData=: %v", phoneNumber, err))
-			return
-		}
-
-		queryData = queryParamsString
-	} else {
-		if res.Type == proto.RuntimeRemoteObjectTypeString {
-			queryData = res.Value.String()
-			helper.PrettyLog("success", fmt.Sprintf("| %s | Get Session Storage Successfully...", phoneNumber))
-		} else {
-			helper.PrettyLog("error", fmt.Sprintf("| %s | Get Session Storage Failed...", phoneNumber))
-			return
-		}
-	}
-
-	if len(queryData) > 0 {
-		sessionStorage = append(sessionStorage, queryData)
 	}
 }
 
-func processStartBotWithAutoRef(browser *rod.Browser, file fs.DirEntry, localStoragePath string, botUsername string, refUrl string) {
-	account, err := helper.ReadFileJson(filepath.Join(localStoragePath, file.Name()))
+func startBotWithAutoRef() {
+	fmt.Println("<=====================[Start Bot With Auto Ref]=====================>")
+	maxThread := config.Int("MAX_THREAD")
+	localStoragePath := "./output/local-storage"
+
+	files := helper.ReadFileDir(localStoragePath)
+
+	var choice int
+	helper.PrettyLog("info", fmt.Sprintf("%v Session Local Storage Detected", len(files)))
+	helper.PrettyLog("1", "Start Bot With Auto Ref All Account")
+	helper.PrettyLog("2", "Start Bot With Auto Ref One Account")
+
+	helper.ClearInputTerminal()
+
+	helper.PrettyLog("input", "Select Choice: ")
+
+	_, err := fmt.Scan(&choice)
+	if err != nil || choice < 0 || choice > 2 {
+		helper.PrettyLog("error", "Invalid selection")
+		return
+	}
+
+	if maxThread > len(files) {
+		maxThread = len(files)
+	}
+
+	var wg sync.WaitGroup
+	var semaphore chan struct{}
+
+	switch choice {
+	case 1:
+		semaphore = make(chan struct{}, maxThread)
+		for _, file := range files {
+			wg.Add(1)
+			go processAccount(semaphore, &wg, file, localStoragePath, "")
+		}
+		wg.Wait()
+	case 2:
+		maxThread = 1
+		semaphore = make(chan struct{}, maxThread)
+
+		selectAccount := listAccount(files)
+		if selectAccount == 0 {
+			return
+		}
+
+		wg.Add(1)
+		go processAccount(semaphore, &wg, files[selectAccount-1], localStoragePath, "")
+		wg.Wait()
+		break
+	}
+}
+
+func getQueryData() {
+	fmt.Println("<=====================[Get Query Data Tools]=====================>")
+
+	var choice int
+
+	maxThread := config.Int("MAX_THREAD")
+	localStoragePath := "./output/local-storage"
+	queryDataPath := "./output/query-data"
+
+	if !helper.CheckFileOrFolder(queryDataPath) {
+		os.Mkdir(queryDataPath, 0755)
+	}
+
+	// Membaca semua file dari folder localStorage
+	files := helper.ReadFileDir(localStoragePath)
+
+	helper.PrettyLog("info", fmt.Sprintf("%v Session Local Storage Detected", len(files)))
+	helper.PrettyLog("1", "Get Query All Account")
+	helper.PrettyLog("2", "Get Query One Account")
+	helper.PrettyLog("3", "Merge All Query Data")
+
+	helper.PrettyLog("input", "Select Choice: ")
+
+	_, err := fmt.Scan(&choice)
+	if err != nil || choice < 0 || choice > 3 {
+		helper.PrettyLog("error", "Invalid selection")
+		return
+	}
+
+	if maxThread > len(files) {
+		maxThread = len(files)
+	}
+
+	var wg sync.WaitGroup
+	var semaphore chan struct{}
+
+	switch choice {
+	case 1:
+		semaphore = make(chan struct{}, maxThread)
+		for _, file := range files {
+			wg.Add(1)
+			go processAccount(semaphore, &wg, file, localStoragePath, queryDataPath)
+		}
+		wg.Wait()
+	case 2:
+		maxThread = 1
+		semaphore = make(chan struct{}, maxThread)
+
+		selectedAccount := listAccount(files)
+		if selectedAccount == 0 {
+			return
+		}
+
+		wg.Add(1)
+		go processAccount(semaphore, &wg, files[selectedAccount-1], localStoragePath, queryDataPath)
+		wg.Wait()
+		break
+	case 3:
+		mergeQueryData(queryDataPath)
+	}
+}
+
+func mergeQueryData(queryDataPath string) {
+	fmt.Println("<=====================[Merge Query Data]=====================>")
+
+	folders, err := os.ReadDir(queryDataPath)
 	if err != nil {
-		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to read file %s: %v", phoneNumber, file.Name(), err))
+		helper.PrettyLog("error", fmt.Sprintf("Failed to read directory %s: %v", queryDataPath, err))
 		return
 	}
 
-	// Membuka halaman kosong terlebih dahulu
-	page := browser.MustPage()
-	navigate(page, "https://web.telegram.org/k/")
+	helper.PrettyLog("info", fmt.Sprintf("%v Query Data Folder Detected", len(folders)))
 
-	page.MustWaitLoad()
+	for index, folder := range folders {
+		helper.PrettyLog(fmt.Sprintf("%v", index+1), folder.Name())
+	}
 
-	time.Sleep(2 * time.Second)
+	helper.ClearInputTerminal()
 
-	// Evaluasi JavaScript untuk menyimpan data ke localStorage
-	switch v := account.(type) {
-	case []map[string]interface{}:
-		// Jika data adalah array of maps
-		for _, acc := range v {
-			for key, value := range acc {
-				page.Eval(fmt.Sprintf(`localStorage.setItem('%s', '%s');`, key, value))
-			}
-		}
-	case map[string]interface{}:
-		// Jika data adalah single map
-		for key, value := range v {
-			page.Eval(fmt.Sprintf(`localStorage.setItem('%s', '%s');`, key, value))
-		}
-	default:
-		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to Evaluate Local Storage: Unknown Data Type", phoneNumber))
+	var choice int
+
+	helper.PrettyLog("input", "Select Folder: ")
+
+	fmt.Scan(&choice)
+	if choice <= 0 || choice > len(folders)+1 {
+		helper.PrettyLog("error", "Invalid selection")
 		return
 	}
 
-	helper.PrettyLog("success", fmt.Sprintf("| %s | Local storage successfully set. Navigating to Telegram Web...", phoneNumber))
+	files := helper.ReadFileDir(fmt.Sprintf("%s/%s", queryDataPath, folders[choice-1].Name()))
+	if files == nil {
+		helper.PrettyLog("error", fmt.Sprintf("Failed to read directory %s: %v", fmt.Sprintf("%s/%s", queryDataPath, folders[choice-1]), err))
+		return
+	}
 
-	time.Sleep(2 * time.Second)
+	var mergedData []string
 
-	// Reload Page
-	page.MustReload()
-	page.MustWaitLoad()
-
-	// Search Bot
-	searchBot(page, "+42777")
-
-	isBot := false
-	// Send Message Ref Url
-	sendMessage(page, refUrl, isBot)
-
-	time.Sleep(3 * time.Second)
-
-	// Click Launch App
-	clickElement(page, fmt.Sprintf(`a.anchor-url[href="%v"]`, refUrl))
-
-	popupLaunchBot(page)
-
-	time.Sleep(3 * time.Second)
-
-	isIframe := checkElement(page, ".payment-verification")
-
-	if isIframe {
-		helper.PrettyLog("success", "Launch Bot")
-
-		iframe := page.MustElement(".payment-verification")
-
-		iframePage := iframe.MustFrame()
-
-		iframePage.MustWaitDOMStable()
-
-		selectors := config.Strings("FIRST_LAUNCH_BOT_SELECTOR")
-
-		helper.PrettyLog("info", fmt.Sprintf("| %s | Process Clicking Selector Bot...", phoneNumber))
-
-		for _, selector := range selectors {
-			clickElement(iframePage, selector)
-			time.Sleep(2 * time.Second)
-			iframePage.MustWaitDOMStable()
+	for _, file := range files {
+		// Baca data dari file
+		account, err := helper.ReadFileTxt(fmt.Sprintf("%s/%s/%s", queryDataPath, folders[choice-1].Name(), file.Name()))
+		if err != nil {
+			helper.PrettyLog("error", fmt.Sprintf("Failed to read file %s: %v", file.Name(), err))
+			continue
 		}
 
-		helper.PrettyLog("success", fmt.Sprintf("| %s | Clicking Selector Bot Completed...", phoneNumber))
-
-		time.Sleep(5 * time.Second)
+		for _, value := range account {
+			mergedData = append(mergedData, value)
+		}
 	}
+
+	// Check Folder
+	mergePath := fmt.Sprintf("%s/%s/merge/", queryDataPath, folders[choice-1].Name())
+	fileName := fmt.Sprintf("merge_query_data_%s.txt", time.Now().Format("20060102150405"))
+
+	if !helper.CheckFileOrFolder(mergePath) {
+		os.Mkdir(fmt.Sprintf(mergePath), 0755)
+	}
+
+	// Save Query Data To Txt
+	for _, value := range mergedData {
+		err := helper.SaveFileTxt(mergePath+fileName, value)
+		if err != nil {
+			helper.PrettyLog("error", fmt.Sprintf("Error saving file: %v", err))
+		}
+	}
+
+	helper.PrettyLog("success", fmt.Sprintf("Merge Query Data Successfully Saved In: %s", mergePath+fileName))
 }
