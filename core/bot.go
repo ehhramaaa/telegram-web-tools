@@ -96,8 +96,7 @@ func processAccount(semaphore chan struct{}, wg *sync.WaitGroup, file fs.DirEntr
 }
 
 func getLocalStorage() {
-	isRepeat := true
-	for isRepeat {
+	for {
 		helper.ClearTerminal()
 		fmt.Println("<=====================[Get Local Storage Session]=====================>")
 		localStoragePath := "./output/local-storage"
@@ -122,6 +121,8 @@ func getLocalStorage() {
 
 		var choice string
 
+		helper.ClearInputTerminal()
+
 		helper.PrettyLog("input", "Repeat Program ? (y/n): ")
 
 		_, err := fmt.Scan(&choice)
@@ -130,8 +131,8 @@ func getLocalStorage() {
 			continue
 		}
 
-		if choice == "n" || choice == "N" {
-			isRepeat = false
+		if choice == "n" {
+			return
 		}
 	}
 }

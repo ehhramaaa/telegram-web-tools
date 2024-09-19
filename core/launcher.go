@@ -10,11 +10,17 @@ import (
 )
 
 var selectedTools int
-var isHeadless = config.Bool("HEADLESS")
+var isHeadless bool
 
 func LaunchBot() {
 	if !helper.CheckFileOrFolder("./output") {
 		os.Mkdir("./output", 0755)
+	}
+
+	headlessMode := config.Bool("HEADLESS")
+
+	if headlessMode {
+		isHeadless = true
 	}
 
 	isRepeat := true

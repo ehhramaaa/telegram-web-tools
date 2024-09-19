@@ -1,7 +1,6 @@
 package core
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -61,8 +60,7 @@ func (c *Client) processGetLocalStorage(passwordAccount string, sessionsPath str
 
 	c.navigate(page, "https://web.telegram.org/a/")
 
-	reader := bufio.NewReader(os.Stdin)
-	_, _ = reader.ReadString('\n')
+	helper.ClearInputTerminal()
 
 	isStop := false
 	for !isStop {
@@ -77,85 +75,109 @@ func (c *Client) processGetLocalStorage(passwordAccount string, sessionsPath str
 		// Select Country
 		c.clickElement(page, "#auth-phone-number-form > div > form > div.DropdownMenu.CountryCodeInput > div.Menu.compact.CountryCodeInput > div.bubble.menu-container.custom-scroll.opacity-transition.fast.left.top.shown.open > div")
 
-		// TODO
+		helper.PrettyLog("info", fmt.Sprintf("Selected Country: %s", country))
 		// Input Number In Terminal
-		phone = strings.TrimSpace(helper.InputTerminal("Input Phone Number (Without +): "))
+		phone = helper.InputTerminal("Input Phone Number: ")
+		phone = strings.ReplaceAll(phone, " ", "")
+
+		c.phoneNumber = phone
+
 		if strings.Contains(phone, "+") {
 			phone = strings.TrimPrefix(phone, "+")
 		}
 
+		if strings.HasPrefix(phone, "62") {
+			phone = strings.TrimPrefix(phone, "62")
+		}
+
+		time.Sleep(1 * time.Second)
+
 		// Input Phone Number
 		c.inputText(page, phone, "#sign-in-phone-number")
+
+		helper.PrettyLog("info", "Checking Your Number...")
 
 		time.Sleep(1 * time.Second)
 
 		// Click Next
 		c.clickElement(page, "#auth-phone-number-form > div > form > button:nth-child(4)")
 
-		time.Sleep(3 * time.Second)
+		time.Sleep(2 * time.Second)
 
-		isPhoneValid := c.getText(page, "#auth-phone-number-form > div > form > div.input-group.touched.with-label > label")
-
-		if isPhoneValid == "Invalid phone number." {
+		// Get Validation
+		if c.checkElement(page, "#sign-in-code") {
+			isStop = true
+		} else {
 			helper.PrettyLog("error", "Phone Number Invalid, Please Try Again...")
 			page.MustReload()
 			page.MustWaitLoad()
 			continue
 		}
-
-		if c.checkElement(page, "#sign-in-code") {
-			// Input Otp In Terminal
-			otpCode = strings.TrimSpace(helper.InputTerminal("Input Otp Code: "))
-
-			if len(otpCode) < 5 || len(otpCode) > 5 {
-				helper.PrettyLog("error", "Otp Code Must 5 Digit Number, Please Try Again...")
-				continue
-			}
-
-			time.Sleep(1 * time.Second)
-
-			// Input Otp Code
-			c.inputText(page, otpCode, "#sign-in-code")
-
-			time.Sleep(2 * time.Second)
-
-			helper.PrettyLog("info", "Check Otp Code...")
-
-			// Get Validation
-			isOtpValid := c.getText(page, "#auth-code-form > div > div.input-group.with-label > label")
-
-			if isOtpValid == "Invalid code." {
-				helper.PrettyLog("error", "Otp Code Invalid, Please Try Again...")
-				page.MustReload()
-				page.MustWaitLoad()
-				continue
-			} else {
-				isStop = true
-			}
-		} else {
-			helper.PrettyLog("warning", "Selector Input Otp Not Found")
-		}
 	}
 
-	helper.PrettyLog("info", "Check Account Password...")
+	isStop = false
+	for !isStop {
+		// Input Otp In Terminal
+		otpCode = helper.InputTerminal("Input Otp Code: ")
+		otpCode = strings.ReplaceAll(otpCode, " ", "")
+
+		if len(otpCode) < 5 || len(otpCode) > 5 {
+			helper.PrettyLog("error", "Otp Code Must 5 Digit Number, Please Try Again...")
+			continue
+		}
+
+		time.Sleep(1 * time.Second)
+
+		// Input Otp Code
+		c.inputText(page, otpCode, "#sign-in-code")
+
+		helper.PrettyLog("info", "Checking Otp Code...")
+
+		time.Sleep(2 * time.Second)
+
+		// Get Validation
+		if c.getText(page, "#auth-code-form > div > div.input-group.with-label > label") == "Invalid code." {
+			helper.PrettyLog("error", "Otp Code Invalid, Please Input Correct Otp Code...")
+			c.removeTextFormInput(page, "#sign-in-code")
+			continue
+		}
+
+		isStop = true
+	}
 
 	// Check Account Have Password Or Not
 	isHavePassword := c.checkElement(page, "#sign-in-password")
 
 	if isHavePassword {
-		if passwordAccount == "" {
-			passwordAccount = strings.TrimSpace(helper.InputTerminal("Input Password: "))
-		}
-		// Input Password
-		c.inputText(page, passwordAccount, "#sign-in-password")
+		isStop = false
+		for !isStop {
+			if passwordAccount == "" {
+				passwordAccount = strings.TrimSpace(helper.InputTerminal("Input Password: "))
+			}
+			// Input Password
+			c.inputText(page, passwordAccount, "#sign-in-password")
 
-		// Click Next
-		c.clickElement(page, "form > button")
+			helper.PrettyLog("info", "Checking Account Password...")
+
+			// Click Next
+			c.clickElement(page, "form > button")
+
+			time.Sleep(2 * time.Second)
+
+			if c.getText(page, "#auth-password-form > div > form > div > label") == "Incorrect password." {
+				helper.PrettyLog("error", "Password Is Incorrect, Please Input Correct Password...")
+				c.removeTextFormInput(page, "#sign-in-password")
+				passwordAccount = ""
+				continue
+			}
+
+			isStop = true
+		}
 	} else {
-		helper.PrettyLog("warning", fmt.Sprintf("Account %v Not Have Password...", phone))
+		helper.PrettyLog("warning", fmt.Sprintf("Phone Number %v Not Have Password...", phone))
 	}
 
-	helper.PrettyLog("success", fmt.Sprintf("Login Account %v Successfully, Sleep 5s Before Get Local Storage...", phone))
+	helper.PrettyLog("success", fmt.Sprintf("Login Phone Number %v Successfully, Sleep 5s Before Get Local Storage...", phone))
 
 	time.Sleep(5 * time.Second)
 

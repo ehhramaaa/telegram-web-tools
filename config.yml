@@ -1,6 +1,6 @@
 BOT_USERNAME: Binance_Moonbix_bot
 MAX_THREAD: 5
-HEADLESS: false
+HEADLESS: True
 
 GET_LOCAL_STORAGE:
   COUNTRY: South Africa
