@@ -3,7 +3,7 @@ MAX_THREAD: 5
 
 GET_LOCAL_STORAGE:
   LOGIN_URL: https://web.telegram.org/a/
-  COUNTRY: South Africa
+  COUNTRY: Indonesia
   PASSWORD: skibidi sigma code
 
 START_BOT_WITH_AUTO_REF:

@@ -31,7 +31,7 @@ func getLocalStorage() {
 		passwordAccount := config.String("GET_LOCAL_STORAGE.PASSWORD")
 
 		launchOptions := launcher.New().
-			Headless(true).
+			Headless(false).
 			MustLaunch()
 
 		browser := rod.New().ControlURL(launchOptions).MustConnect()

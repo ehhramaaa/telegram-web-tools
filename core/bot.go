@@ -25,13 +25,13 @@ func processGetLocalStorage(browser *rod.Browser, passwordAccount string, loginU
 
 	navigate(page, loginUrl)
 
-	// Click Login By Phone
-	clickElement(page, "#auth-qr-form > div > button")
+	reader := bufio.NewReader(os.Stdin)
+	_, _ = reader.ReadString('\n')
 
 	isStop := false
 	for !isStop {
-		reader := bufio.NewReader(os.Stdin)
-		_, _ = reader.ReadString('\n')
+		// Click Login By Phone
+		clickElement(page, "#auth-qr-form > div > button")
 
 		// Input Country
 		inputText(page, country, "#sign-in-phone-code")
@@ -64,13 +64,8 @@ func processGetLocalStorage(browser *rod.Browser, passwordAccount string, loginU
 			page.MustReload()
 			page.MustWaitLoad()
 			continue
-		} else {
-			isStop = true
 		}
-	}
 
-	isStop = false
-	for !isStop {
 		if checkElement(page, "#sign-in-code") {
 			// Input Otp In Terminal
 			otpCode = strings.TrimSpace(helper.InputTerminal("Input Otp Code: "))
