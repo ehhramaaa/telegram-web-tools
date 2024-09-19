@@ -1,15 +1,16 @@
 BOT_USERNAME: Binance_Moonbix_bot
 MAX_THREAD: 5
+HEADLESS: True
 
 GET_LOCAL_STORAGE:
-  LOGIN_URL: https://web.telegram.org/a/
   COUNTRY: South Africa
-  PASSWORD: skibidi sigma code
+  PASSWORD: ""
 
 START_BOT_WITH_AUTO_REF:
   REF_URL: https://t.me/Binance_Moonbix_bot/start?startApp=ref_5024522783&startapp=ref_5024522783&utm_medium=web_share_copy
   FIRST_LAUNCH_BOT_SELECTOR:
     - "#_APP > div > div > div.DailyLogin_loginbutton_15aOK"
-    - "#_APP > div > div > div.........."
-    - "#_APP > div > div > div.........."
-    - "#_APP > div > div > div.........."
+    - "#_APP > div >................"
+    - "#_APP > div >................"
+    - "#_APP > div >................"
+    - "#_APP > div >................"
