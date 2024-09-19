@@ -16,12 +16,50 @@ import (
 	"github.com/gookit/config/v2"
 )
 
+func (c *Client) setLocalStorage(page *rod.Page, file fs.DirEntry, localStoragePath string) {
+	account, err := helper.ReadFileJson(filepath.Join(localStoragePath, file.Name()))
+	if err != nil {
+		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to read file %s: %v", c.phoneNumber, file.Name(), err))
+		return
+	}
+
+	// Membuka halaman kosong terlebih dahulu
+	c.navigate(page, "https://web.telegram.org/k/")
+
+	page.MustWaitLoad()
+
+	time.Sleep(2 * time.Second)
+
+	// Evaluasi JavaScript untuk menyimpan data ke localStorage
+	switch v := account.(type) {
+	case []map[string]interface{}:
+		// Jika data adalah array of maps
+		for _, acc := range v {
+			for key, value := range acc {
+				page.Eval(fmt.Sprintf(`localStorage.setItem('%s', '%s');`, key, value))
+			}
+		}
+	case map[string]interface{}:
+		// Jika data adalah single map
+		for key, value := range v {
+			page.Eval(fmt.Sprintf(`localStorage.setItem('%s', '%s');`, key, value))
+		}
+	default:
+		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to Evaluate Local Storage: Unknown Data Type", c.phoneNumber))
+		return
+	}
+
+	helper.PrettyLog("success", fmt.Sprintf("| %s | Local storage successfully set. Navigating to Telegram Web...", c.phoneNumber))
+
+	time.Sleep(2 * time.Second)
+}
+
 func (c *Client) processGetLocalStorage(passwordAccount string, sessionsPath string, country string) {
 	var phone, otpCode string
 
 	page := c.Browser.MustPage()
 
-	navigate(page, "https://web.telegram.org/a/")
+	c.navigate(page, "https://web.telegram.org/a/")
 
 	reader := bufio.NewReader(os.Stdin)
 	_, _ = reader.ReadString('\n')
@@ -29,15 +67,15 @@ func (c *Client) processGetLocalStorage(passwordAccount string, sessionsPath str
 	isStop := false
 	for !isStop {
 		// Click Login By Phone
-		clickElement(page, "#auth-qr-form > div > button")
+		c.clickElement(page, "#auth-qr-form > div > button")
 
 		// Input Country
-		inputText(page, country, "#sign-in-phone-code")
+		c.inputText(page, country, "#sign-in-phone-code")
 
 		time.Sleep(1 * time.Second)
 
 		// Select Country
-		clickElement(page, "#auth-phone-number-form > div > form > div.DropdownMenu.CountryCodeInput > div.Menu.compact.CountryCodeInput > div.bubble.menu-container.custom-scroll.opacity-transition.fast.left.top.shown.open > div")
+		c.clickElement(page, "#auth-phone-number-form > div > form > div.DropdownMenu.CountryCodeInput > div.Menu.compact.CountryCodeInput > div.bubble.menu-container.custom-scroll.opacity-transition.fast.left.top.shown.open > div")
 
 		// TODO
 		// Input Number In Terminal
@@ -47,16 +85,16 @@ func (c *Client) processGetLocalStorage(passwordAccount string, sessionsPath str
 		}
 
 		// Input Phone Number
-		inputText(page, phone, "#sign-in-phone-number")
+		c.inputText(page, phone, "#sign-in-phone-number")
 
 		time.Sleep(1 * time.Second)
 
 		// Click Next
-		clickElement(page, "#auth-phone-number-form > div > form > button:nth-child(4)")
+		c.clickElement(page, "#auth-phone-number-form > div > form > button:nth-child(4)")
 
 		time.Sleep(3 * time.Second)
 
-		isPhoneValid := getText(page, "#auth-phone-number-form > div > form > div.input-group.touched.with-label > label")
+		isPhoneValid := c.getText(page, "#auth-phone-number-form > div > form > div.input-group.touched.with-label > label")
 
 		if isPhoneValid == "Invalid phone number." {
 			helper.PrettyLog("error", "Phone Number Invalid, Please Try Again...")
@@ -65,7 +103,7 @@ func (c *Client) processGetLocalStorage(passwordAccount string, sessionsPath str
 			continue
 		}
 
-		if checkElement(page, "#sign-in-code") {
+		if c.checkElement(page, "#sign-in-code") {
 			// Input Otp In Terminal
 			otpCode = strings.TrimSpace(helper.InputTerminal("Input Otp Code: "))
 
@@ -77,14 +115,14 @@ func (c *Client) processGetLocalStorage(passwordAccount string, sessionsPath str
 			time.Sleep(1 * time.Second)
 
 			// Input Otp Code
-			inputText(page, otpCode, "#sign-in-code")
+			c.inputText(page, otpCode, "#sign-in-code")
 
 			time.Sleep(2 * time.Second)
 
 			helper.PrettyLog("info", "Check Otp Code...")
 
 			// Get Validation
-			isOtpValid := getText(page, "#auth-code-form > div > div.input-group.with-label > label")
+			isOtpValid := c.getText(page, "#auth-code-form > div > div.input-group.with-label > label")
 
 			if isOtpValid == "Invalid code." {
 				helper.PrettyLog("error", "Otp Code Invalid, Please Try Again...")
@@ -102,17 +140,17 @@ func (c *Client) processGetLocalStorage(passwordAccount string, sessionsPath str
 	helper.PrettyLog("info", "Check Account Password...")
 
 	// Check Account Have Password Or Not
-	isHavePassword := checkElement(page, "#sign-in-password")
+	isHavePassword := c.checkElement(page, "#sign-in-password")
 
 	if isHavePassword {
 		if passwordAccount == "" {
 			passwordAccount = strings.TrimSpace(helper.InputTerminal("Input Password: "))
 		}
 		// Input Password
-		inputText(page, passwordAccount, "#sign-in-password")
+		c.inputText(page, passwordAccount, "#sign-in-password")
 
 		// Click Next
-		clickElement(page, "form > button")
+		c.clickElement(page, "form > button")
 	} else {
 		helper.PrettyLog("warning", fmt.Sprintf("Account %v Not Have Password...", phone))
 	}
@@ -121,7 +159,7 @@ func (c *Client) processGetLocalStorage(passwordAccount string, sessionsPath str
 
 	time.Sleep(5 * time.Second)
 
-	navigate(page, "https://web.telegram.org/k/")
+	c.navigate(page, "https://web.telegram.org/k/")
 
 	// Extract local storage data
 	localStorageData := page.MustEval(`() => JSON.stringify(localStorage);`).String()
@@ -164,42 +202,10 @@ func (c *Client) processGetLocalStorage(passwordAccount string, sessionsPath str
 }
 
 func (c *Client) processGetQueryData(file fs.DirEntry, localStoragePath string, queryDataPath string, botUsername string) {
-	account, err := helper.ReadFileJson(filepath.Join(localStoragePath, file.Name()))
-	if err != nil {
-		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to read file %s: %v", c.phoneNumber, file.Name(), err))
-		return
-	}
-
-	// Membuka halaman kosong terlebih dahulu
 	page := c.Browser.MustPage()
-	navigate(page, "https://web.telegram.org/k/")
 
-	page.MustWaitLoad()
-
-	time.Sleep(2 * time.Second)
-
-	// Evaluasi JavaScript untuk menyimpan data ke localStorage
-	switch v := account.(type) {
-	case []map[string]interface{}:
-		// Jika data adalah array of maps
-		for _, acc := range v {
-			for key, value := range acc {
-				page.Eval(fmt.Sprintf(`localStorage.setItem('%s', '%s');`, key, value))
-			}
-		}
-	case map[string]interface{}:
-		// Jika data adalah single map
-		for key, value := range v {
-			page.Eval(fmt.Sprintf(`localStorage.setItem('%s', '%s');`, key, value))
-		}
-	default:
-		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to Evaluate Local Storage: Unknown Data Type", c.phoneNumber))
-		return
-	}
-
-	helper.PrettyLog("success", fmt.Sprintf("| %s | Local storage successfully set. Navigating to Telegram Web...", c.phoneNumber))
-
-	time.Sleep(2 * time.Second)
+	// Set Local Storage
+	c.setLocalStorage(page, file, localStoragePath)
 
 	// Reload Page
 	page.MustReload()
@@ -209,13 +215,13 @@ func (c *Client) processGetQueryData(file fs.DirEntry, localStoragePath string, 
 	c.searchBot(page, botUsername)
 
 	// Click Launch App
-	clickElement(page, "div.new-message-bot-commands")
+	c.clickElement(page, "div.new-message-bot-commands")
 
 	c.popupLaunchBot(page)
 
 	time.Sleep(2 * time.Second)
 
-	isIframe := checkElement(page, ".payment-verification")
+	isIframe := c.checkElement(page, ".payment-verification")
 
 	if !isIframe {
 		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed To Launch Bot: Iframe Not Detected", c.phoneNumber))
@@ -298,42 +304,10 @@ func (c *Client) processGetQueryData(file fs.DirEntry, localStoragePath string, 
 }
 
 func (c *Client) processStartBotWithAutoRef(file fs.DirEntry, localStoragePath string, botUsername string, refUrl string) {
-	account, err := helper.ReadFileJson(filepath.Join(localStoragePath, file.Name()))
-	if err != nil {
-		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to read file %s: %v", c.phoneNumber, file.Name(), err))
-		return
-	}
-
-	// Membuka halaman kosong terlebih dahulu
 	page := c.Browser.MustPage()
-	navigate(page, "https://web.telegram.org/k/")
 
-	page.MustWaitLoad()
-
-	time.Sleep(2 * time.Second)
-
-	// Evaluasi JavaScript untuk menyimpan data ke localStorage
-	switch v := account.(type) {
-	case []map[string]interface{}:
-		// Jika data adalah array of maps
-		for _, acc := range v {
-			for key, value := range acc {
-				page.Eval(fmt.Sprintf(`localStorage.setItem('%s', '%s');`, key, value))
-			}
-		}
-	case map[string]interface{}:
-		// Jika data adalah single map
-		for key, value := range v {
-			page.Eval(fmt.Sprintf(`localStorage.setItem('%s', '%s');`, key, value))
-		}
-	default:
-		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to Evaluate Local Storage: Unknown Data Type", c.phoneNumber))
-		return
-	}
-
-	helper.PrettyLog("success", fmt.Sprintf("| %s | Local storage successfully set. Navigating to Telegram Web...", c.phoneNumber))
-
-	time.Sleep(2 * time.Second)
+	// Set Local Storage
+	c.setLocalStorage(page, file, localStoragePath)
 
 	// Reload Page
 	page.MustReload()
@@ -349,13 +323,13 @@ func (c *Client) processStartBotWithAutoRef(file fs.DirEntry, localStoragePath s
 	time.Sleep(3 * time.Second)
 
 	// Click Launch App
-	clickElement(page, fmt.Sprintf(`a.anchor-url[href="%v"]`, refUrl))
+	c.clickElement(page, fmt.Sprintf(`a.anchor-url[href="%v"]`, refUrl))
 
 	c.popupLaunchBot(page)
 
 	time.Sleep(3 * time.Second)
 
-	isIframe := checkElement(page, ".payment-verification")
+	isIframe := c.checkElement(page, ".payment-verification")
 
 	if isIframe {
 		helper.PrettyLog("success", "Launch Bot")
@@ -371,7 +345,7 @@ func (c *Client) processStartBotWithAutoRef(file fs.DirEntry, localStoragePath s
 		helper.PrettyLog("info", fmt.Sprintf("| %s | Process Clicking Selector Bot...", c.phoneNumber))
 
 		for _, selector := range selectors {
-			clickElement(iframePage, selector)
+			c.clickElement(iframePage, selector)
 			time.Sleep(2 * time.Second)
 			iframePage.MustWaitDOMStable()
 		}
