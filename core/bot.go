@@ -106,6 +106,9 @@ func processGetLocalStorage(browser *rod.Browser, passwordAccount string, loginU
 	isHavePassword := checkElement(page, "#sign-in-password")
 
 	if isHavePassword {
+		if passwordAccount == "" {
+			passwordAccount = strings.TrimSpace(helper.InputTerminal("Input Password: "))
+		}
 		// Input Password
 		inputText(page, passwordAccount, "#sign-in-password")
 
