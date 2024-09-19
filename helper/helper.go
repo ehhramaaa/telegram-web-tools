@@ -120,7 +120,7 @@ func CheckFileOrFolder(filePath string) bool {
 }
 
 func RandomNumber(min int, max int) int {
-	return rand.Intn(max) + min
+	return (rand.Intn(max-min) + min)
 }
 
 func GetTextAfterKey(urlData, key string) (string, error) {

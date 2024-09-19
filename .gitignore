@@ -1,4 +1,2 @@
 .vscode
-querydata/*
-sessions/*
-config.yml
+output/*

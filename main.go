@@ -2,11 +2,8 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"strconv"
-	"strings"
+	"telegram-web/core"
 	"telegram-web/helper"
-	"telegram-web/launcher"
 	"time"
 
 	"github.com/gookit/config/v2"
@@ -14,7 +11,6 @@ import (
 )
 
 func main() {
-
 	// Load Config
 	config.AddDriver(yaml.Driver)
 
@@ -23,59 +19,55 @@ func main() {
 		panic(err)
 	}
 
-	tools := []func(){
-		func() {
-			helper.PrettyLog("0", "Exit Program")
-		},
-		func() {
-			helper.PrettyLog("1", "Get Local Storage")
-		},
-		func() {
-			helper.PrettyLog("2", "Get Query Data Tools")
-		},
-	}
-
 	isRepeat := true
-
 	for isRepeat {
 		helper.ClearTerminal()
 
-		fmt.Println(`✩░▒▓▆▅▃▂▁𝐭𝐞𝐥𝐞𝐠𝐫𝐚𝐦 𝐰𝐞𝐛 𝐭𝐨𝐨𝐥𝐬▁▂▃▅▆▓▒░✩`)
-		fmt.Println("ρσɯҽɾҽԃ Ⴆყ : ԋσʅყƈαɳ")
+		fmt.Println(`
+ /$$$$$$$$        /$$                 /$$      /$$           /$$             /$$$$$$$$                  /$$          
+|__  $$__/       | $$                | $$  /$ | $$          | $$            |__  $$__/                 | $$          
+   | $$  /$$$$$$ | $$  /$$$$$$       | $$ /$$$| $$  /$$$$$$ | $$$$$$$          | $$  /$$$$$$   /$$$$$$ | $$  /$$$$$$$
+   | $$ /$$__  $$| $$ /$$__  $$      | $$/$$ $$ $$ /$$__  $$| $$__  $$         | $$ /$$__  $$ /$$__  $$| $$ /$$_____/
+   | $$| $$$$$$$$| $$| $$$$$$$$      | $$$$_  $$$$| $$$$$$$$| $$  \ $$         | $$| $$  \ $$| $$  \ $$| $$|  $$$$$$ 
+   | $$| $$_____/| $$| $$_____/      | $$$/ \  $$$| $$_____/| $$  | $$         | $$| $$  | $$| $$  | $$| $$ \____  $$
+   | $$|  $$$$$$$| $$|  $$$$$$$      | $$/   \  $$|  $$$$$$$| $$$$$$$/         | $$|  $$$$$$/|  $$$$$$/| $$ /$$$$$$$/
+   |__/ \_______/|__/ \_______/      |__/     \__/ \_______/|_______/          |__/ \______/  \______/ |__/|_______/ 
+`)
 
-		for _, tool := range tools {
-			tool()
-		}
+		fmt.Println("ρσωєяє∂ ву: ѕкιвι∂ι ѕιgмα ¢σ∂є")
 
-		fmt.Print("\n")
+		var choice int
 
-		choice, err := strconv.Atoi(strings.TrimSpace(helper.InputTerminal("Masukan Pilihan: ")))
-		if err != nil {
-			helper.PrettyLog("error", err.Error())
-			return
-		}
+		helper.PrettyLog("0", "Exit Program")
+		helper.PrettyLog("1", "Get Local Storage")
+		helper.PrettyLog("2", "Start Bot With Auto Ref")
+		helper.PrettyLog("3", "Get Query Data Tools")
+		helper.PrettyLog("4", "Set Username (Upcoming)")
+		helper.PrettyLog("5", "Set First Name (Upcoming)")
+		helper.PrettyLog("6", "Set Last Name (Upcoming)")
 
-		if choice > (len(tools) - 1) {
-			helper.PrettyLog("error", "Pilihan tidak valid")
+		helper.PrettyLog("input", "Select Your Choice: ")
+
+		_, err := fmt.Scan(&choice)
+		if err != nil || choice < 0 || choice > 5 {
+			helper.PrettyLog("error", "Invalid selection")
 			time.Sleep(2 * time.Second)
 			continue
 		}
 
-		switch choice {
-		case 0:
-			helper.PrettyLog("success", "Exiting Program...")
-			os.Exit(0)
-		case 1:
-			launcher.GetLocalStorage()
-		case 2:
-			launcher.GetQueryData()
-		case 3:
-			return
-		}
+		core.ProcessChoice(choice)
 
 		isInvalid := true
 		for isInvalid {
-			choice := strings.ToLower(strings.TrimSpace(helper.InputTerminal("Repeat Program ? (y/n): ")))
+			var choice string
+			helper.PrettyLog("input", "Repeat Program ? (y/n): ")
+
+			_, err := fmt.Scan(&choice)
+			if err != nil {
+				helper.PrettyLog("error", "Invalid selection")
+				time.Sleep(2 * time.Second)
+				continue
+			}
 
 			switch choice {
 			case "n":
@@ -84,7 +76,7 @@ func main() {
 			case "y":
 				isInvalid = false
 			default:
-				helper.PrettyLog("error", "Pilihan tidak valid")
+				helper.PrettyLog("error", "Invalid selection")
 			}
 		}
 	}

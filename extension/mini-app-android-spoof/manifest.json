@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "RBJunior MiniApp Bypass",
+  "version": "1.2",
+  "description": "An extension to bypass all Telegram mini apps, Community: https://t.me/Airdrop_DailyOfficial",
+  "icons": {
+      "16": "images/16.png",
+      "32": "images/32.png",
+      "48": "images/48.png",
+      "128": "images/128.png"
+  },
+  "content_scripts": [
+      {
+        "js": ["scripts/telegram.js"],
+        "matches": [
+          "https://web.telegram.org/*"
+        ]
+      }
+  ],
+  "action": {
+      "default_title": "View information",
+      "default_popup": "popup.html"  
+  },
+  "permissions": [
+      "activeTab",
+      "scripting",
+      "webNavigation",
+      "declarativeNetRequest",
+      "declarativeNetRequestFeedback"
+  ],
+  "declarative_net_request": {
+      "rule_resources": [
+        {
+          "id": "ruleset_1",
+          "enabled": true,
+          "path": "rules.json"
+        }
+      ]
+  },
+  "host_permissions": [
+      "http://*/*", "https://*/*"
+  ]
+}
