@@ -1,7 +1,7 @@
 [![Static Badge](https://img.shields.io/badge/Telegram-Channel%20Link-Link?style=for-the-badge&logo=Telegram&logoColor=white&logoSize=auto&color=blue)](https://t.me/skibidi_sigma_code)
 [![Static Badge](https://img.shields.io/badge/Telegram-Chat%20Link-Link?style=for-the-badge&logo=Telegram&logoColor=white&logoSize=auto&color=blue)](https://t.me/skibidi_sigma_chat)
 
-![demo](https://raw.githubusercontent.com/ehhramaaa/telegram-web-tools/main/demo/Screenshot_5.png)
+![demo](https://raw.githubusercontent.com/ehhramaaa/telegram-web-tools/main/demo/demo.png)
 
 # Telegram Web Tools
 
@@ -17,15 +17,17 @@
 
 ## Features
 
-|                  Feature                  | Supported |
-| :---------------------------------------: | :-------: |
-|          Auto Get Local Storage           |    ✅     |
-|            Auto Get Query Data            |    ✅     |
-|       Auto Start Bot With Auto Ref        |    ✅     |
-|             Auto Set Username             |    ⏳     |
-|            Auto Set Last Name             |    ⏳     |
-|            Auto Set First Name            |    ⏳     |
-| Multithreading (Except Get Local Storage) |    ✅     |
+|         Feature         | Supported |
+| :---------------------: | :-------: |
+|    Get Local Storage    |    ✅     |
+|   Get Detail Account    |    ✅     |
+|      Set Username       |    ✅     |
+| Start Bot With Auto Ref |    ✅     |
+|     Get Query Data      |    ✅     |
+|    Merge Query Data     |    ✅     |
+|     Set First Name      |    ⏳     |
+|      Set Last Name      |    ⏳     |
+|     Multithreading      |    ✅     |
 
 ## [Settings](https://github.com/ehhramaaa/telegram-web-tools/blob/main/config.yml)
 
@@ -87,11 +89,19 @@ chmod +x telegramWebTools
 
 # Get Local Storage Session Demo
 
-![demo](https://raw.githubusercontent.com/ehhramaaa/telegram-web-tools/main/demo/Screenshot_8.png)
+![demo](https://raw.githubusercontent.com/ehhramaaa/telegram-web-tools/main/demo/local_storage.png)
+
+# Get Detail Account Demo
+
+![demo](https://raw.githubusercontent.com/ehhramaaa/telegram-web-tools/main/demo/get_detail.png)
+
+# Set Username Demo
+
+![demo](https://raw.githubusercontent.com/ehhramaaa/telegram-web-tools/main/demo/set_username.png)
 
 # Start Bot With Auto Ref Demo
 
-![demo](https://raw.githubusercontent.com/ehhramaaa/telegram-web-tools/main/demo/Image.png)
+![demo](https://raw.githubusercontent.com/ehhramaaa/telegram-web-tools/main/demo/start_auto_ref.png)
 
 # Get Query Data Tools Demo
 
