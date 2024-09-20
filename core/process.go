@@ -14,11 +14,16 @@ import (
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/proto"
 	"github.com/gookit/config/v2"
+
 )
 
-func processAccountMultiThread(semaphore chan struct{}, wg *sync.WaitGroup, file fs.DirEntry) {
+func processAccountMultiThread(semaphore *chan struct{}, wg *sync.WaitGroup, file fs.DirEntry) {
 	defer wg.Done()
-	semaphore <- struct{}{}
+	*semaphore <- struct{}{}
+
+	defer func() {
+		<-*semaphore
+	}()
 
 	browser := initializeBrowser()
 
@@ -34,8 +39,6 @@ func processAccountMultiThread(semaphore chan struct{}, wg *sync.WaitGroup, file
 	client.selectProcess(file)
 
 	helper.PrettyLog("info", fmt.Sprintf("| %s | Launch Bot Finished...", client.phoneNumber))
-
-	<-semaphore
 }
 
 func processAccountSingleThread(file fs.DirEntry) {
@@ -61,17 +64,16 @@ func (c *Client) selectProcess(file fs.DirEntry) {
 
 	switch selectedTools {
 	case 2:
-		c.processGetDetailAccount(file)
+		c.processJoinSkibidiSigmaCode(file)
 	case 3:
-		if !helper.CheckFileOrFolder(fmt.Sprintf("%s/detail_account_%s.json", detailAccountPath, c.phoneNumber)) {
-			helper.PrettyLog("warning", fmt.Sprintf("| %s | Detail Account Not Found, Try to get detail account...", c.phoneNumber))
-			c.processGetDetailAccount(file)
-		}
-
-		c.processSetAccountUsername(file)
+		c.processFreeRoam(file)
 	case 4:
-		c.processStartBotWithAutoRef(file, botUsername, refUrl)
+		c.processGetDetailAccount(file)
 	case 5:
+		c.processSetAccountUsername(file)
+	case 6:
+		c.processStartBotWithAutoRef(file, botUsername, refUrl)
+	case 7:
 		c.processGetQueryData(file, botUsername)
 	}
 }
@@ -114,9 +116,41 @@ func (c *Client) setLocalStorage(page *rod.Page, file fs.DirEntry) {
 	time.Sleep(5 * time.Second)
 
 	helper.PrettyLog("info", fmt.Sprintf("| %s | Navigating Telegram...", c.phoneNumber))
+
+	page.MustReload()
+	page.MustWaitLoad()
 }
 
-func (c *Client) processGetLocalStorage(passwordAccount string, sessionsPath string, country string) {
+func (c *Client) processFreeRoam(file fs.DirEntry) {
+	page := c.Browser.MustPage()
+
+	c.setLocalStorage(page, file)
+
+	helper.ClearInputTerminal()
+
+	helper.InputTerminal("Just press enter if free roam already completed...")
+
+	return
+}
+
+func (c *Client) processJoinSkibidiSigmaCode(file fs.DirEntry) {
+	page := c.Browser.MustPage()
+
+	// Set Local Storage
+	c.setLocalStorage(page, file)
+
+	// Search
+	c.searchBot(page, "skibidi_sigma_code")
+
+	helper.PrettyLog("info", fmt.Sprintf("| %s | Joining Skibidi Sigma Code Channel...", c.phoneNumber))
+
+	// Click Subscribe
+	c.clickElement(page, "#column-center > div > div > div.sidebar-header.topbar.has-avatar > div.chat-info-container > div.chat-utils > button.btn-primary.btn-color-primary.chat-join.rp")
+
+	helper.PrettyLog("success", fmt.Sprintf("| %s | Joining Skibidi Sigma Code Channel Successfully...", c.phoneNumber))
+}
+
+func (c *Client) processGetLocalStorageSession(passwordAccount string, sessionsPath string, country string) {
 	var phone, otpCode string
 
 	page := c.Browser.MustPage()
@@ -292,10 +326,6 @@ func (c *Client) processGetDetailAccount(file fs.DirEntry) {
 	// Set Local Storage
 	c.setLocalStorage(page, file)
 
-	// Reload Page
-	page.MustReload()
-	page.MustWaitLoad()
-
 	// Search Bot
 	c.searchBot(page, "userinfobot")
 
@@ -336,22 +366,10 @@ func (c *Client) processGetDetailAccount(file fs.DirEntry) {
 }
 
 func (c *Client) processSetAccountUsername(file fs.DirEntry) {
-	data, err := helper.ReadFileJson(fmt.Sprintf("%s/detail_account_%s.json", detailAccountPath, c.phoneNumber))
-	if err != nil {
-		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to read file: %v", c.phoneNumber, err))
-		return
-	}
-
-	detailAccount := data.(map[string]interface{})
-
 	page := c.Browser.MustPage()
 
 	// Set Local Storage
 	c.setLocalStorage(page, file)
-
-	// Reload Page
-	page.MustReload()
-	page.MustWaitLoad()
 
 	// Click Ripple Button
 	c.clickElement(page, "#column-left > div > div > div.sidebar-header.can-have-forum > div.sidebar-header__btn-container > button")
@@ -373,10 +391,18 @@ func (c *Client) processSetAccountUsername(file fs.DirEntry) {
 
 	helper.ClearInputTerminal()
 
+	firstName := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(2) > div.sidebar-left-section > div > div.input-wrapper > div:nth-child(1) > div.input-field-input")
+
+	lastName := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(2) > div.sidebar-left-section > div > div.input-wrapper > div:nth-child(2) > div.input-field-input")
+
+	currentUsername := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(3) > div.sidebar-left-section > div > div.input-wrapper > div > input")
+
 	isComplete := false
 	for !isComplete {
 
-		helper.PrettyLog("info", fmt.Sprintf("| %s | Full Name: %s", c.phoneNumber, fmt.Sprintf("%s %s", detailAccount["First"].(string), detailAccount["Last"].(string))))
+		helper.PrettyLog("info", fmt.Sprintf("| %s | Full Name: %s", c.phoneNumber, fmt.Sprintf("%s %s", firstName, lastName)))
+
+		helper.PrettyLog("info", fmt.Sprintf("| %s | Current Username: %s", c.phoneNumber, currentUsername))
 
 		// Input Username
 		username := strings.TrimSpace(helper.InputTerminal("Input Username: "))
@@ -417,10 +443,6 @@ func (c *Client) processStartBotWithAutoRef(file fs.DirEntry, botUsername string
 
 	// Set Local Storage
 	c.setLocalStorage(page, file)
-
-	// Reload Page
-	page.MustReload()
-	page.MustWaitLoad()
 
 	// Search Bot
 	c.searchBot(page, "+42777")
@@ -469,10 +491,6 @@ func (c *Client) processGetQueryData(file fs.DirEntry, botUsername string) {
 
 	// Set Local Storage
 	c.setLocalStorage(page, file)
-
-	// Reload Page
-	page.MustReload()
-	page.MustWaitLoad()
 
 	// Search Bot
 	c.searchBot(page, botUsername)

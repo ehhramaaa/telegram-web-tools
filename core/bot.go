@@ -60,8 +60,21 @@ func selectAccount(files []fs.DirEntry) int {
 	return selectedAccount
 }
 
-func selectChoice(files []fs.DirEntry, isMultiThread bool) {
-	choice := helper.InputChoice()
+func selectChoice(files []fs.DirEntry, isMultiThread bool, isSelectAccount bool, optional ...int) {
+	var choice int
+
+	if len(files) < 1 {
+		helper.PrettyLog("error", "No Session Local Storage Detected, You Can Get Local Storage Session First")
+		return
+	}
+
+	if isSelectAccount {
+		choice = helper.InputChoice()
+	} else if len(optional) > 0 && optional[0] == 1 {
+		choice = 1
+	} else {
+		choice = 2
+	}
 
 	var wg sync.WaitGroup
 	var semaphore chan struct{}
@@ -76,12 +89,17 @@ func selectChoice(files []fs.DirEntry, isMultiThread bool) {
 			semaphore = make(chan struct{}, maxThread)
 			for _, file := range files {
 				wg.Add(1)
-				go processAccountMultiThread(semaphore, &wg, file)
+				go processAccountMultiThread(&semaphore, &wg, file)
 			}
 			wg.Wait()
 		} else {
-			for _, file := range files {
-				processAccountSingleThread(file)
+			if len(files) == 1 {
+				processAccountSingleThread(files[0])
+				return
+			} else {
+				for _, file := range files {
+					processAccountSingleThread(file)
+				}
 			}
 		}
 	case 2:
@@ -96,7 +114,7 @@ func selectChoice(files []fs.DirEntry, isMultiThread bool) {
 	}
 }
 
-func getLocalStorage() {
+func getLocalStorageSession() {
 	for {
 		helper.ClearTerminal()
 		fmt.Println("<=====================[Get Local Storage Session]=====================>")
@@ -115,7 +133,7 @@ func getLocalStorage() {
 			Browser: browser,
 		}
 
-		client.processGetLocalStorage(passwordAccount, localStoragePath, countryAccount)
+		client.processGetLocalStorageSession(passwordAccount, localStoragePath, countryAccount)
 
 		browser.MustClose()
 
@@ -137,6 +155,16 @@ func getLocalStorage() {
 	}
 }
 
+func freeRoam() {
+	fmt.Println("<=====================[Get Detail Account]=====================>")
+
+	files := helper.ReadFileDir(localStoragePath)
+
+	helper.PrettyLog("info", fmt.Sprintf("%v Session Local Storage Detected", len(files)))
+
+	selectChoice(files, false, false)
+}
+
 func getDetailAccount() {
 	fmt.Println("<=====================[Get Detail Account]=====================>")
 
@@ -148,7 +176,7 @@ func getDetailAccount() {
 	helper.PrettyLog("1", "Get Detail All Account")
 	helper.PrettyLog("2", "Get Detail One Account")
 
-	selectChoice(files, true)
+	selectChoice(files, true, true)
 }
 
 func setUsername() {
@@ -162,7 +190,7 @@ func setUsername() {
 	helper.PrettyLog("1", "Set Username All Account")
 	helper.PrettyLog("2", "Set Username One Account")
 
-	selectChoice(files, false)
+	selectChoice(files, false, true)
 }
 
 func startBotWithAutoRef() {
@@ -176,7 +204,7 @@ func startBotWithAutoRef() {
 	helper.PrettyLog("1", "Start Bot With Auto Ref All Account")
 	helper.PrettyLog("2", "Start Bot With Auto Ref One Account")
 
-	selectChoice(files, true)
+	selectChoice(files, true, true)
 }
 
 func getQueryData() {
@@ -191,7 +219,17 @@ func getQueryData() {
 	helper.PrettyLog("1", "Get Query All Account")
 	helper.PrettyLog("2", "Get Query One Account")
 
-	selectChoice(files, true)
+	selectChoice(files, true, true)
+}
+
+func joinSkibidiSigmaCode() {
+	fmt.Println("<=====================[Join Skibidi Sigma Code Community]=====================>")
+
+	files := helper.ReadFileDir(localStoragePath)
+
+	helper.PrettyLog("info", fmt.Sprintf("%v Session Local Storage Detected", len(files)))
+
+	selectChoice(files, true, false, 1)
 }
 
 func mergeQueryData() {

@@ -14,7 +14,7 @@ var isHeadless bool
 var localStoragePath, queryDataPath, detailAccountPath string
 var maxThread int
 
-func init() {
+func initConfig() {
 	outputPath := "./output"
 	localStoragePath = "./output/local-storage"
 	queryDataPath = "./output/query-data"
@@ -41,6 +41,8 @@ func init() {
 }
 
 func LaunchBot() {
+	initConfig()
+
 	isRepeat := true
 	for isRepeat {
 		helper.ClearTerminal()
@@ -59,15 +61,18 @@ func LaunchBot() {
 		fmt.Println("ρσωєяє∂ ву: ѕкιвι∂ι ѕιgмα ¢σ∂є")
 
 		helper.PrettyLog("0", "Exit Program")
-		helper.PrettyLog("1", "Get Local Storage")
-		helper.PrettyLog("2", "Get Detail Account")
-		helper.PrettyLog("3", "Set Account Username")
-		helper.PrettyLog("4", "Start Bot With Auto Ref")
-		helper.PrettyLog("5", "Get Query Data Tools")
-		helper.PrettyLog("6", "Merge All Query Data")
-		helper.PrettyLog("7", "Set First Name (Upcoming)")
-		helper.PrettyLog("8", "Set Last Name (Upcoming)")
-		helper.PrettyLog("9", "Set Account Password (Upcoming)")
+		helper.PrettyLog("1", "Get Local Storage Session")
+		helper.PrettyLog("2", "Join Skibidi Sigma Code Community")
+		helper.PrettyLog("3", "Free Roam")
+		helper.PrettyLog("4", "Get Detail Account")
+		helper.PrettyLog("5", "Set Account Username")
+		helper.PrettyLog("6", "Start Bot With Auto Ref")
+		helper.PrettyLog("7", "Get Query Data Tools")
+		helper.PrettyLog("8", "Merge All Query Data")
+		helper.PrettyLog("9", "Join Telegram Group")
+		// helper.PrettyLog("8", "Set First Name (Upcoming)")
+		// helper.PrettyLog("9", "Set Last Name (Upcoming)")
+		// helper.PrettyLog("10", "Set Account Password (Upcoming)")
 
 		helper.PrettyLog("input", "Select Your Choice: ")
 
@@ -112,24 +117,30 @@ func processChoice(selectedTools int) {
 	} else {
 		switch selectedTools {
 		case 1:
-			getLocalStorage()
+			getLocalStorageSession()
 			return
 		case 2:
-			getDetailAccount()
+			joinSkibidiSigmaCode()
 			return
 		case 3:
-			setUsername()
+			freeRoam()
 			return
 		case 4:
-			startBotWithAutoRef()
+			getDetailAccount()
 			return
 		case 5:
-			getQueryData()
+			setUsername()
 			return
 		case 6:
-			mergeQueryData()
+			startBotWithAutoRef()
 			return
 		case 7:
+			getQueryData()
+			return
+		case 8:
+			mergeQueryData()
+			return
+		case 9:
 			helper.PrettyLog("info", "Feature Is Upcoming...")
 		}
 	}
