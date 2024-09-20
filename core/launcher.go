@@ -18,7 +18,7 @@ func init() {
 	outputPath := "./output"
 	localStoragePath = "./output/local-storage"
 	queryDataPath = "./output/query-data"
-	detailAccountPath := "./output/detail-account"
+	detailAccountPath = "./output/detail-account"
 	maxThread = config.Int("MAX_THREAD")
 
 	headlessMode := config.Bool("HEADLESS")

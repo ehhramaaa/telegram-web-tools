@@ -63,6 +63,11 @@ func (c *Client) selectProcess(file fs.DirEntry) {
 	case 2:
 		c.processGetDetailAccount(file)
 	case 3:
+		if !helper.CheckFileOrFolder(fmt.Sprintf("%s/detail_account_%s.json", detailAccountPath, c.phoneNumber)) {
+			helper.PrettyLog("warning", fmt.Sprintf("| %s | Detail Account Not Found, Try to get detail account...", c.phoneNumber))
+			c.processGetDetailAccount(file)
+		}
+
 		c.processSetAccountUsername(file)
 	case 4:
 		c.processStartBotWithAutoRef(file, botUsername, refUrl)
@@ -331,6 +336,14 @@ func (c *Client) processGetDetailAccount(file fs.DirEntry) {
 }
 
 func (c *Client) processSetAccountUsername(file fs.DirEntry) {
+	data, err := helper.ReadFileJson(fmt.Sprintf("%s/detail_account_%s.json", detailAccountPath, c.phoneNumber))
+	if err != nil {
+		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to read file: %v", c.phoneNumber, err))
+		return
+	}
+
+	detailAccount := data.(map[string]interface{})
+
 	page := c.Browser.MustPage()
 
 	// Set Local Storage
@@ -362,6 +375,8 @@ func (c *Client) processSetAccountUsername(file fs.DirEntry) {
 
 	isComplete := false
 	for !isComplete {
+
+		helper.PrettyLog("info", fmt.Sprintf("| %s | Full Name: %s", c.phoneNumber, fmt.Sprintf("%s %s", detailAccount["First"].(string), detailAccount["Last"].(string))))
 
 		// Input Username
 		username := strings.TrimSpace(helper.InputTerminal("Input Username: "))

@@ -63,7 +63,7 @@ func SaveFileJson(filePath string, data interface{}) error {
 		return err
 	}
 
-	PrettyLog("success", fmt.Sprintf("Data berhasil disimpan ke %s", filePath))
+	PrettyLog("success", fmt.Sprintf("Data successfully saved to %s", filePath))
 
 	return nil
 }
@@ -90,7 +90,7 @@ func ReadFileJson(filePath string) (interface{}, error) {
 	// Jika gagal, coba unmarshal sebagai generic map
 	var dataObject map[string]interface{}
 	if err := json.Unmarshal(byteValue, &dataObject); err == nil {
-		PrettyLog("success", fmt.Sprintf("Data object berhasil dibaca dari %s", filePath))
+		PrettyLog("success", fmt.Sprintf("Read data %s successfully", filePath))
 		return dataObject, nil
 	}
 
