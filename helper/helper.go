@@ -30,6 +30,20 @@ func InputTerminal(prompt string) string {
 	return strings.TrimSpace(value)
 }
 
+func InputChoice() int {
+	var choice int
+
+	PrettyLog("input", "Select Choice: ")
+
+	_, err := fmt.Scan(&choice)
+	if err != nil || choice <= 0 || choice > 3 {
+		PrettyLog("error", "Invalid selection")
+		return 0
+	}
+
+	return choice
+}
+
 func SaveFileJson(filePath string, data interface{}) error {
 	// Membuka file untuk menulis data JSON
 	file, err := os.Create(filePath)
@@ -69,7 +83,7 @@ func ReadFileJson(filePath string) (interface{}, error) {
 	// Coba unmarshal sebagai array of generic maps (map[string]interface{})
 	var dataArray []map[string]interface{}
 	if err := json.Unmarshal(byteValue, &dataArray); err == nil {
-		PrettyLog("success", fmt.Sprintf("Data array berhasil dibaca dari %s", filePath))
+		PrettyLog("success", fmt.Sprintf("Read data %s successfully", filePath))
 		return dataArray, nil
 	}
 

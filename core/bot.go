@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"path/filepath"
 	"strconv"
-	"strings"
 	"sync"
 	"telegram-web/helper"
 	"time"
@@ -16,8 +14,8 @@ import (
 	"github.com/gookit/config/v2"
 )
 
-func listAccount(files []fs.DirEntry) int {
-	var selectAccount int
+func selectAccount(files []fs.DirEntry) int {
+	var selectedAccount int
 	filesPerBatch := 10
 	totalFiles := len(files)
 
@@ -34,10 +32,10 @@ func listAccount(files []fs.DirEntry) int {
 		helper.PrettyLog("input", "Select Account (or press 'N' to see more): ")
 
 		// Read user input
-		_, err := fmt.Scan(&input)
+		fmt.Scan(&input)
 
 		// Check if input is "N" (case-insensitive) to continue showing more files
-		if err != nil || input == "n" || input == "N" {
+		if input == "n" || input == "N" {
 			// If we're at the last batch, notify the user and stop asking
 			if index+filesPerBatch >= totalFiles {
 				helper.PrettyLog("info", "No more files to display.")
@@ -53,53 +51,55 @@ func listAccount(files []fs.DirEntry) int {
 			helper.PrettyLog("error", "Invalid selection. Please try again.")
 			return 0
 		}
+
+		selectedAccount = selectAccount
+
+		break
 	}
 
-	return selectAccount
+	return selectedAccount
 }
 
-func processAccount(semaphore chan struct{}, wg *sync.WaitGroup, file fs.DirEntry, localStoragePath string, queryDataPath string) {
-	botUsername := config.String("BOT_USERNAME")
-	refUrl := config.String("START_BOT_WITH_AUTO_REF.REF_URL")
+func selectChoice(files []fs.DirEntry, isMultiThread bool) {
+	choice := helper.InputChoice()
 
-	defer wg.Done()
-	semaphore <- struct{}{}
+	var wg sync.WaitGroup
+	var semaphore chan struct{}
 
-	extensionPath, _ := filepath.Abs("./extension/mini-app-android-spoof")
+	switch choice {
+	case 1:
+		if isMultiThread {
+			if maxThread > len(files) {
+				maxThread = len(files)
+			}
 
-	launchOptions := launcher.New().
-		Set("load-extension", extensionPath).
-		Headless(isHeadless).
-		MustLaunch()
-
-	browser := rod.New().ControlURL(launchOptions).MustConnect()
-
-	defer browser.MustClose()
-
-	client := &Client{
-		phoneNumber: strings.TrimSuffix(file.Name(), ".json"),
-		Browser:     browser,
-	}
-
-	helper.PrettyLog("info", fmt.Sprintf("| %s | Start Processing Account...", client.phoneNumber))
-
-	switch selectedTools {
+			semaphore = make(chan struct{}, maxThread)
+			for _, file := range files {
+				wg.Add(1)
+				go processAccountMultiThread(semaphore, &wg, file)
+			}
+			wg.Wait()
+		} else {
+			for _, file := range files {
+				processAccountSingleThread(file)
+			}
+		}
 	case 2:
-		client.processStartBotWithAutoRef(file, localStoragePath, botUsername, refUrl)
-	case 3:
-		client.processGetQueryData(file, localStoragePath, queryDataPath, botUsername)
+		selectedAccount := selectAccount(files)
+
+		if selectedAccount == 0 {
+			return
+		}
+
+		processAccountSingleThread(files[selectedAccount-1])
+		break
 	}
-
-	helper.PrettyLog("info", fmt.Sprintf("| %s | Launch Bot Finished...", client.phoneNumber))
-
-	<-semaphore
 }
 
 func getLocalStorage() {
 	for {
 		helper.ClearTerminal()
 		fmt.Println("<=====================[Get Local Storage Session]=====================>")
-		localStoragePath := "./output/local-storage"
 		countryAccount := config.String("GET_LOCAL_STORAGE.COUNTRY")
 		passwordAccount := config.String("GET_LOCAL_STORAGE.PASSWORD")
 
@@ -137,122 +137,64 @@ func getLocalStorage() {
 	}
 }
 
-func startBotWithAutoRef() {
-	fmt.Println("<=====================[Start Bot With Auto Ref]=====================>")
-	maxThread := config.Int("MAX_THREAD")
-	localStoragePath := "./output/local-storage"
+func getDetailAccount() {
+	fmt.Println("<=====================[Get Detail Account]=====================>")
 
 	files := helper.ReadFileDir(localStoragePath)
 
-	var choice int
+	helper.ClearInputTerminal()
+
+	helper.PrettyLog("info", fmt.Sprintf("%v Session Local Storage Detected", len(files)))
+	helper.PrettyLog("1", "Get Detail All Account")
+	helper.PrettyLog("2", "Get Detail One Account")
+
+	selectChoice(files, true)
+}
+
+func setUsername() {
+	fmt.Println("<=====================[Set Account Username]=====================>")
+
+	files := helper.ReadFileDir(localStoragePath)
+
+	helper.ClearInputTerminal()
+
+	helper.PrettyLog("info", fmt.Sprintf("%v Session Local Storage Detected", len(files)))
+	helper.PrettyLog("1", "Set Username All Account")
+	helper.PrettyLog("2", "Set Username One Account")
+
+	selectChoice(files, false)
+}
+
+func startBotWithAutoRef() {
+	fmt.Println("<=====================[Start Bot With Auto Ref]=====================>")
+
+	files := helper.ReadFileDir(localStoragePath)
+
+	helper.ClearInputTerminal()
+
 	helper.PrettyLog("info", fmt.Sprintf("%v Session Local Storage Detected", len(files)))
 	helper.PrettyLog("1", "Start Bot With Auto Ref All Account")
 	helper.PrettyLog("2", "Start Bot With Auto Ref One Account")
 
-	helper.ClearInputTerminal()
-
-	helper.PrettyLog("input", "Select Choice: ")
-
-	_, err := fmt.Scan(&choice)
-	if err != nil || choice < 0 || choice > 2 {
-		helper.PrettyLog("error", "Invalid selection")
-		return
-	}
-
-	if maxThread > len(files) {
-		maxThread = len(files)
-	}
-
-	var wg sync.WaitGroup
-	var semaphore chan struct{}
-
-	switch choice {
-	case 1:
-		semaphore = make(chan struct{}, maxThread)
-		for _, file := range files {
-			wg.Add(1)
-			go processAccount(semaphore, &wg, file, localStoragePath, "")
-		}
-		wg.Wait()
-	case 2:
-		maxThread = 1
-		semaphore = make(chan struct{}, maxThread)
-
-		selectAccount := listAccount(files)
-		if selectAccount == 0 {
-			return
-		}
-
-		wg.Add(1)
-		go processAccount(semaphore, &wg, files[selectAccount-1], localStoragePath, "")
-		wg.Wait()
-		break
-	}
+	selectChoice(files, true)
 }
 
 func getQueryData() {
 	fmt.Println("<=====================[Get Query Data Tools]=====================>")
 
-	var choice int
-
-	maxThread := config.Int("MAX_THREAD")
-	localStoragePath := "./output/local-storage"
-	queryDataPath := "./output/query-data"
-
-	if !helper.CheckFileOrFolder(queryDataPath) {
-		os.Mkdir(queryDataPath, 0755)
-	}
-
 	// Membaca semua file dari folder localStorage
 	files := helper.ReadFileDir(localStoragePath)
+
+	helper.ClearInputTerminal()
 
 	helper.PrettyLog("info", fmt.Sprintf("%v Session Local Storage Detected", len(files)))
 	helper.PrettyLog("1", "Get Query All Account")
 	helper.PrettyLog("2", "Get Query One Account")
-	helper.PrettyLog("3", "Merge All Query Data")
 
-	helper.PrettyLog("input", "Select Choice: ")
-
-	_, err := fmt.Scan(&choice)
-	if err != nil || choice < 0 || choice > 3 {
-		helper.PrettyLog("error", "Invalid selection")
-		return
-	}
-
-	if maxThread > len(files) {
-		maxThread = len(files)
-	}
-
-	var wg sync.WaitGroup
-	var semaphore chan struct{}
-
-	switch choice {
-	case 1:
-		semaphore = make(chan struct{}, maxThread)
-		for _, file := range files {
-			wg.Add(1)
-			go processAccount(semaphore, &wg, file, localStoragePath, queryDataPath)
-		}
-		wg.Wait()
-	case 2:
-		maxThread = 1
-		semaphore = make(chan struct{}, maxThread)
-
-		selectedAccount := listAccount(files)
-		if selectedAccount == 0 {
-			return
-		}
-
-		wg.Add(1)
-		go processAccount(semaphore, &wg, files[selectedAccount-1], localStoragePath, queryDataPath)
-		wg.Wait()
-		break
-	case 3:
-		mergeQueryData(queryDataPath)
-	}
+	selectChoice(files, true)
 }
 
-func mergeQueryData(queryDataPath string) {
+func mergeQueryData() {
 	fmt.Println("<=====================[Merge Query Data]=====================>")
 
 	folders, err := os.ReadDir(queryDataPath)

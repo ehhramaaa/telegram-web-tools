@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"telegram-web/helper"
 	"time"
 
@@ -15,7 +16,62 @@ import (
 	"github.com/gookit/config/v2"
 )
 
-func (c *Client) setLocalStorage(page *rod.Page, file fs.DirEntry, localStoragePath string) {
+func processAccountMultiThread(semaphore chan struct{}, wg *sync.WaitGroup, file fs.DirEntry) {
+	defer wg.Done()
+	semaphore <- struct{}{}
+
+	browser := initializeBrowser()
+
+	defer browser.MustClose()
+
+	client := &Client{
+		phoneNumber: strings.TrimSuffix(file.Name(), ".json"),
+		Browser:     browser,
+	}
+
+	helper.PrettyLog("info", fmt.Sprintf("| %s | Start Processing Account...", client.phoneNumber))
+
+	client.selectProcess(file)
+
+	helper.PrettyLog("info", fmt.Sprintf("| %s | Launch Bot Finished...", client.phoneNumber))
+
+	<-semaphore
+}
+
+func processAccountSingleThread(file fs.DirEntry) {
+	browser := initializeBrowser()
+
+	defer browser.MustClose()
+
+	client := &Client{
+		phoneNumber: strings.TrimSuffix(file.Name(), ".json"),
+		Browser:     browser,
+	}
+
+	helper.PrettyLog("info", fmt.Sprintf("| %s | Start Processing Account...", client.phoneNumber))
+
+	client.selectProcess(file)
+
+	helper.PrettyLog("info", fmt.Sprintf("| %s | Launch Bot Finished...", client.phoneNumber))
+}
+
+func (c *Client) selectProcess(file fs.DirEntry) {
+	botUsername := config.String("BOT_USERNAME")
+	refUrl := config.String("START_BOT_WITH_AUTO_REF.REF_URL")
+
+	switch selectedTools {
+	case 2:
+		c.processGetDetailAccount(file)
+	case 3:
+		c.processSetAccountUsername(file)
+	case 4:
+		c.processStartBotWithAutoRef(file, botUsername, refUrl)
+	case 5:
+		c.processGetQueryData(file, botUsername)
+	}
+}
+
+func (c *Client) setLocalStorage(page *rod.Page, file fs.DirEntry) {
 	account, err := helper.ReadFileJson(filepath.Join(localStoragePath, file.Name()))
 	if err != nil {
 		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to read file %s: %v", c.phoneNumber, file.Name(), err))
@@ -48,9 +104,11 @@ func (c *Client) setLocalStorage(page *rod.Page, file fs.DirEntry, localStorageP
 		return
 	}
 
-	helper.PrettyLog("success", fmt.Sprintf("| %s | Local storage successfully set. Navigating to Telegram Web...", c.phoneNumber))
+	helper.PrettyLog("success", fmt.Sprintf("| %s | Local storage successfully set | Sleep 5s Before Navigating...", c.phoneNumber))
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(5 * time.Second)
+
+	helper.PrettyLog("info", fmt.Sprintf("| %s | Navigating Telegram...", c.phoneNumber))
 }
 
 func (c *Client) processGetLocalStorage(passwordAccount string, sessionsPath string, country string) {
@@ -223,11 +281,179 @@ func (c *Client) processGetLocalStorage(passwordAccount string, sessionsPath str
 	helper.PrettyLog("success", fmt.Sprintf("Data berhasil disimpan ke %s", filePath))
 }
 
-func (c *Client) processGetQueryData(file fs.DirEntry, localStoragePath string, queryDataPath string, botUsername string) {
+func (c *Client) processGetDetailAccount(file fs.DirEntry) {
 	page := c.Browser.MustPage()
 
 	// Set Local Storage
-	c.setLocalStorage(page, file, localStoragePath)
+	c.setLocalStorage(page, file)
+
+	// Reload Page
+	page.MustReload()
+	page.MustWaitLoad()
+
+	// Search Bot
+	c.searchBot(page, "userinfobot")
+
+	// Send Message
+	c.sendMessage(page, "/start", true)
+
+	// Get Message
+	message := c.getLastChat(page)
+
+	result := make(map[string]string)
+
+	// Pisahkan text menjadi baris-baris
+	lines := strings.Split(message, "\n")
+
+	// Iterasi setiap baris
+	for _, line := range lines {
+		// Jika baris mengandung ": ", kita pisah berdasarkan itu
+		if strings.Contains(line, ": ") {
+			parts := strings.SplitN(line, ": ", 2) // Split menjadi 2 bagian: kunci dan nilai
+			key := parts[0]                        // Bagian pertama adalah kunci
+			value := parts[1]                      // Bagian kedua adalah nilai
+			result[key] = value                    // Masukkan ke dalam map
+		} else if strings.HasPrefix(line, "@") {
+			// Jika baris diawali dengan @, hapus @ dan simpan username
+			result["username"] = strings.TrimPrefix(strings.TrimSpace(line), "@")
+		}
+	}
+
+	filePath := fmt.Sprintf("%s/detail_account_%s.json", detailAccountPath, c.phoneNumber)
+
+	helper.SaveFileJson(filePath, result)
+
+	if helper.CheckFileOrFolder(filePath) {
+		helper.PrettyLog("success", fmt.Sprintf(fmt.Sprintf("| %s | Detail Account Successfully Saved", c.phoneNumber)))
+	} else {
+		helper.PrettyLog("error", fmt.Sprintf("| %s | Detail Account Failed Saved", c.phoneNumber))
+	}
+}
+
+func (c *Client) processSetAccountUsername(file fs.DirEntry) {
+	page := c.Browser.MustPage()
+
+	// Set Local Storage
+	c.setLocalStorage(page, file)
+
+	// Reload Page
+	page.MustReload()
+	page.MustWaitLoad()
+
+	// Click Ripple Button
+	c.clickElement(page, "#column-left > div > div > div.sidebar-header.can-have-forum > div.sidebar-header__btn-container > button")
+
+	time.Sleep(1 * time.Second)
+
+	isSetting := c.gotoSetting(page)
+
+	if !isSetting {
+		return
+	}
+
+	time.Sleep(1 * time.Second)
+
+	// Click Edit Profile
+	c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.settings-container.profile-container.is-collapsed.active > div.sidebar-header > button:nth-child(3)")
+
+	time.Sleep(1 * time.Second)
+
+	helper.ClearInputTerminal()
+
+	isComplete := false
+	for !isComplete {
+
+		// Input Username
+		username := strings.TrimSpace(helper.InputTerminal("Input Username: "))
+
+		helper.PrettyLog("info", fmt.Sprintf("| %s | Checking Username...", c.phoneNumber))
+
+		c.removeTextFormInput(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(3) > div.sidebar-left-section > div > div.input-wrapper > div > input")
+
+		c.inputText(page, username, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(3) > div.sidebar-left-section > div > div.input-wrapper > div > input")
+
+		time.Sleep(2 * time.Second)
+
+		isUsernameAvailable := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(3) > div.sidebar-left-section > div > div.input-wrapper > div > label > span")
+
+		// Check Username
+		if isUsernameAvailable == "Username is already taken" || isUsernameAvailable == "Username is invalid" {
+			helper.PrettyLog("error", fmt.Sprintf("| %s | %s, Try Another Username", c.phoneNumber, isUsernameAvailable))
+			c.removeTextFormInput(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(3) > div.sidebar-left-section > div > div.input-wrapper > div > input")
+			continue
+		}
+
+		helper.PrettyLog("info", fmt.Sprintf("| %s | Username: %s Available", c.phoneNumber, username))
+
+		time.Sleep(1 * time.Second)
+
+		c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > button")
+
+		time.Sleep(1 * time.Second)
+
+		helper.PrettyLog("success", fmt.Sprintf("| %s | Username Successfully Set", c.phoneNumber))
+
+		isComplete = true
+	}
+}
+
+func (c *Client) processStartBotWithAutoRef(file fs.DirEntry, botUsername string, refUrl string) {
+	page := c.Browser.MustPage()
+
+	// Set Local Storage
+	c.setLocalStorage(page, file)
+
+	// Reload Page
+	page.MustReload()
+	page.MustWaitLoad()
+
+	// Search Bot
+	c.searchBot(page, "+42777")
+
+	// Send Message Ref Url
+	c.sendMessage(page, refUrl, false)
+
+	time.Sleep(3 * time.Second)
+
+	// Click Launch App
+	c.clickElement(page, fmt.Sprintf(`a.anchor-url[href="%v"]`, refUrl))
+
+	c.popupLaunchBot(page)
+
+	time.Sleep(3 * time.Second)
+
+	isIframe := c.checkElement(page, ".payment-verification")
+
+	if isIframe {
+		helper.PrettyLog("success", "Launch Bot")
+
+		iframe := page.MustElement(".payment-verification")
+
+		iframePage := iframe.MustFrame()
+
+		iframePage.MustWaitDOMStable()
+
+		selectors := config.Strings("FIRST_LAUNCH_BOT_SELECTOR")
+
+		helper.PrettyLog("info", fmt.Sprintf("| %s | Process Clicking Selector Bot...", c.phoneNumber))
+
+		for _, selector := range selectors {
+			c.clickElement(iframePage, selector)
+			time.Sleep(2 * time.Second)
+			iframePage.MustWaitDOMStable()
+		}
+
+		helper.PrettyLog("success", fmt.Sprintf("| %s | Clicking Selector Bot Completed...", c.phoneNumber))
+
+		time.Sleep(5 * time.Second)
+	}
+}
+
+func (c *Client) processGetQueryData(file fs.DirEntry, botUsername string) {
+	page := c.Browser.MustPage()
+
+	// Set Local Storage
+	c.setLocalStorage(page, file)
 
 	// Reload Page
 	page.MustReload()
@@ -321,59 +547,5 @@ func (c *Client) processGetQueryData(file fs.DirEntry, localStoragePath string, 
 		}
 	} else {
 		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed To Get Query Data", c.phoneNumber))
-	}
-
-}
-
-func (c *Client) processStartBotWithAutoRef(file fs.DirEntry, localStoragePath string, botUsername string, refUrl string) {
-	page := c.Browser.MustPage()
-
-	// Set Local Storage
-	c.setLocalStorage(page, file, localStoragePath)
-
-	// Reload Page
-	page.MustReload()
-	page.MustWaitLoad()
-
-	// Search Bot
-	c.searchBot(page, "+42777")
-
-	isBot := false
-	// Send Message Ref Url
-	c.sendMessage(page, refUrl, isBot)
-
-	time.Sleep(3 * time.Second)
-
-	// Click Launch App
-	c.clickElement(page, fmt.Sprintf(`a.anchor-url[href="%v"]`, refUrl))
-
-	c.popupLaunchBot(page)
-
-	time.Sleep(3 * time.Second)
-
-	isIframe := c.checkElement(page, ".payment-verification")
-
-	if isIframe {
-		helper.PrettyLog("success", "Launch Bot")
-
-		iframe := page.MustElement(".payment-verification")
-
-		iframePage := iframe.MustFrame()
-
-		iframePage.MustWaitDOMStable()
-
-		selectors := config.Strings("FIRST_LAUNCH_BOT_SELECTOR")
-
-		helper.PrettyLog("info", fmt.Sprintf("| %s | Process Clicking Selector Bot...", c.phoneNumber))
-
-		for _, selector := range selectors {
-			c.clickElement(iframePage, selector)
-			time.Sleep(2 * time.Second)
-			iframePage.MustWaitDOMStable()
-		}
-
-		helper.PrettyLog("success", fmt.Sprintf("| %s | Clicking Selector Bot Completed...", c.phoneNumber))
-
-		time.Sleep(5 * time.Second)
 	}
 }

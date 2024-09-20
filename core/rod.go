@@ -4,12 +4,27 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"telegram-web/helper"
 	"time"
 
 	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/launcher"
 	"github.com/go-rod/rod/lib/utils"
 )
+
+func initializeBrowser() *rod.Browser {
+	extensionPath, _ := filepath.Abs("./extension/mini-app-android-spoof")
+
+	launchOptions := launcher.New().
+		Set("load-extension", extensionPath).
+		Headless(isHeadless).
+		MustLaunch()
+
+	browser := rod.New().ControlURL(launchOptions).MustConnect()
+
+	return browser
+}
 
 func (c *Client) checkElement(page *rod.Page, selector string) bool {
 	// Recovery from panic, in case of unexpected errors
