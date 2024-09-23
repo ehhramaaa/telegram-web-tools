@@ -34,17 +34,14 @@ func getLocalStorageSession() {
 
 		browser.MustClose()
 
-		var choice string
+		choice := strings.TrimSpace(helper.InputTerminal("Repeat Program ? (y/n): "))
 
-		helper.PrettyLog("input", "Repeat Program ? (y/n): ")
-
-		fmt.Scan(&choice)
-		if choice != "y" || choice != "n" || choice != "Y" || choice != "N" {
+		if choice == "y" || choice != "n" || choice != "Y" || choice != "N" {
 			helper.PrettyLog("error", "Invalid selection")
 			return
 		}
 
-		if choice == "n" {
+		if choice == "n" || choice != "N" {
 			return
 		}
 	}
