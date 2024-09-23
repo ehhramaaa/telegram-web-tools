@@ -34,14 +34,14 @@ func getLocalStorageSession() {
 
 		browser.MustClose()
 
-		choice := strings.TrimSpace(helper.InputTerminal("Repeat Program ? (y/n): "))
+		choice := strings.ToLower(helper.InputTerminal("Repeat Program ? (y/n): "))
 
-		if choice == "y" || choice != "n" || choice != "Y" || choice != "N" {
+		if choice != "y" || choice != "n" {
 			helper.PrettyLog("error", "Invalid selection")
 			return
 		}
 
-		if choice == "n" || choice != "N" {
+		if choice == "n" {
 			return
 		}
 	}
@@ -49,6 +49,8 @@ func getLocalStorageSession() {
 
 func freeRoam() {
 	fmt.Println("<=====================[Free Roam]=====================>")
+
+	config.Set("HEADLESS_MODE", false)
 
 	files := helper.ReadFileDir(localStoragePath)
 
@@ -91,7 +93,7 @@ func joinSkibidiSigmaCode() {
 func autoSubscribeChannel() {
 	fmt.Println("<=====================[Auto Subscribe Telegram Channel]=====================>")
 
-	channelUsername = strings.TrimSpace(helper.InputTerminal("Input Channel Username: "))
+	channelUsername = strings.TrimSpace(helper.InputTerminal("Input Channel Name / Username: "))
 
 	files := helper.ReadFileDir(localStoragePath)
 

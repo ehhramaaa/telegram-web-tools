@@ -11,7 +11,8 @@ var selectedMainTools, selectedSubTools, selectedOptionsAccount int
 var localStoragePath, localStorageExpiredPath, queryDataPath, detailAccountPath string
 var selectedBotList, channelUsername string
 var indexBotList int
-var lastName string
+var batchLastName string
+var batchPassword string
 
 func initConfig() {
 	outputPath := "./output"

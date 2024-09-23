@@ -30,6 +30,11 @@ func InputTerminal(prompt string) string {
 	return strings.TrimSpace(value)
 }
 
+func ClearInputTerminal() {
+	reader := bufio.NewReader(os.Stdin)
+	_, _ = reader.ReadString('\n')
+}
+
 func InputChoice(length int) int {
 	var choice int
 

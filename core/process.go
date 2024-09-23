@@ -66,6 +66,9 @@ func processSelectedSubTools() {
 		case 4:
 			setLastName()
 			return
+		case 5:
+			setAccountPassword()
+			return
 		}
 	case 5:
 		switch selectedSubTools {
@@ -671,6 +674,8 @@ func (c *Client) processSetAccountUsername(file fs.DirEntry) {
 
 	currentUsername := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(3) > div.sidebar-left-section > div > div.input-wrapper > div > input")
 
+	helper.ClearInputTerminal()
+
 	isComplete := false
 	for !isComplete {
 
@@ -679,11 +684,9 @@ func (c *Client) processSetAccountUsername(file fs.DirEntry) {
 		helper.PrettyLog("info", fmt.Sprintf("| %s | Current Username: %s", c.phoneNumber, currentUsername))
 
 		if currentUsername != "" {
-			helper.PrettyLog("info", "Are You Sure Want To Change Current Username?")
+			makeSure := strings.ToLower(helper.InputTerminal("Are You Sure Want To Change Current Username? (y/n) (default = Next Account): "))
 
-			makeSure := strings.TrimSpace(helper.InputTerminal("Input Choice (y/n) (default = Next Account): "))
-
-			if makeSure != "y" || makeSure != "Y" {
+			if makeSure != "y" {
 				return
 			}
 		}
@@ -716,13 +719,15 @@ func (c *Client) processSetAccountUsername(file fs.DirEntry) {
 
 		time.Sleep(1 * time.Second)
 
-		helper.PrettyLog("success", fmt.Sprintf("| %s | Username Successfully Set", c.phoneNumber))
+		helper.PrettyLog("success", fmt.Sprintf("| %s | Username Successfully Set, Sleep 5s....", c.phoneNumber))
+
+		time.Sleep(5 * time.Second)
 
 		isComplete = true
 	}
 }
 
-func (c *Client) processSetFirstName(file fs.DirEntry) {
+func (c *Client) processSetAccountFirstName(file fs.DirEntry) {
 	page := c.Browser.MustPage()
 
 	// Set Local Storage
@@ -754,29 +759,92 @@ func (c *Client) processSetFirstName(file fs.DirEntry) {
 
 	lastName := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(2) > div.sidebar-left-section > div > div.input-wrapper > div:nth-child(2) > div.input-field-input")
 
-	isComplete := false
-	for !isComplete {
+	helper.PrettyLog("info", fmt.Sprintf("| %s | Current Full Name: %s", c.phoneNumber, fmt.Sprintf("%s %s", firstName, lastName)))
 
-		helper.PrettyLog("info", fmt.Sprintf("| %s | Current Full Name: %s", c.phoneNumber, fmt.Sprintf("%s %s", firstName, lastName)))
+	helper.ClearInputTerminal()
 
+	// Input First Name
+	firstName = helper.InputTerminal("Input New First Name: ")
+
+	time.Sleep(1 * time.Second)
+
+	c.removeTextFormInput(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(2) > div.sidebar-left-section > div > div.input-wrapper > div:nth-child(1) > div.input-field-input")
+
+	time.Sleep(1 * time.Second)
+
+	c.inputText(page, firstName, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(2) > div.sidebar-left-section > div > div.input-wrapper > div:nth-child(1) > div.input-field-input")
+
+	time.Sleep(2 * time.Second)
+
+	c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > button")
+
+	time.Sleep(2 * time.Second)
+
+	helper.PrettyLog("success", fmt.Sprintf("| %s | First Name Successfully Set", c.phoneNumber))
+
+}
+
+func (c *Client) processSetAccountLastName(file fs.DirEntry) {
+	page := c.Browser.MustPage()
+
+	// Set Local Storage
+	isLogin := c.processSetLocalStorage(page, file)
+
+	if !isLogin {
+		return
+	}
+
+	// Click Ripple Button
+	c.clickElement(page, "#column-left > div > div > div.sidebar-header.can-have-forum > div.sidebar-header__btn-container > button")
+
+	time.Sleep(1 * time.Second)
+
+	isSetting := c.gotoSetting(page)
+
+	if !isSetting {
+		return
+	}
+
+	time.Sleep(1 * time.Second)
+
+	// Click Edit Profile
+	c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.settings-container.profile-container.is-collapsed.active > div.sidebar-header > button:nth-child(3)")
+
+	time.Sleep(1 * time.Second)
+
+	firstName := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(2) > div.sidebar-left-section > div > div.input-wrapper > div:nth-child(1) > div.input-field-input")
+
+	lastName := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(2) > div.sidebar-left-section > div > div.input-wrapper > div:nth-child(2) > div.input-field-input")
+
+	helper.PrettyLog("info", fmt.Sprintf("| %s | Current Full Name: %s", c.phoneNumber, fmt.Sprintf("%s %s", firstName, lastName)))
+
+	helper.ClearInputTerminal()
+
+	if batchLastName == "" {
 		// Input First Name
-		firstName := strings.TrimSpace(helper.InputTerminal("Input New First Name: "))
-
-		c.inputText(page, firstName, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(3) > div.sidebar-left-section > div > div.input-wrapper > div > input")
-
-		time.Sleep(2 * time.Second)
-
-		c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > button")
-
-		time.Sleep(1 * time.Second)
-
-		helper.PrettyLog("success", fmt.Sprintf("| %s | First Name Successfully Set", c.phoneNumber))
-
-		isComplete = true
+		lastName = strings.TrimSpace(helper.InputTerminal("Input New Last Name: "))
+	} else {
+		lastName = batchLastName
 	}
+
+	time.Sleep(1 * time.Second)
+
+	c.removeTextFormInput(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(2) > div.sidebar-left-section > div > div.input-wrapper > div:nth-child(2) > div.input-field-input")
+
+	time.Sleep(1 * time.Second)
+
+	c.inputText(page, lastName, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(2) > div.sidebar-left-section > div > div.input-wrapper > div:nth-child(2) > div.input-field-input")
+
+	time.Sleep(2 * time.Second)
+
+	c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > button")
+
+	time.Sleep(2 * time.Second)
+
+	helper.PrettyLog("success", fmt.Sprintf("| %s | Last Name Successfully Set", c.phoneNumber))
 }
 
-func (c *Client) processSetLastName(file fs.DirEntry) {
+func (c *Client) processSetAccountPassword(file fs.DirEntry) {
 	page := c.Browser.MustPage()
 
 	// Set Local Storage
@@ -799,36 +867,99 @@ func (c *Client) processSetLastName(file fs.DirEntry) {
 
 	time.Sleep(1 * time.Second)
 
-	// Click Edit Profile
-	c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.settings-container.profile-container.is-collapsed.active > div.sidebar-header > button:nth-child(3)")
+	// Click Privacy And Security
+	c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.settings-container.profile-container.is-collapsed.active > div.sidebar-content > div > div:nth-child(3) > div > div > div > div:nth-child(3)")
 
 	time.Sleep(1 * time.Second)
 
-	firstName := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(2) > div.sidebar-left-section > div > div.input-wrapper > div:nth-child(1) > div.input-field-input")
+	// Click 2FA
+	c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.dont-u-dare-block-me.active > div.sidebar-content > div > div:nth-child(2) > div.sidebar-left-section.no-delimiter > div > div:nth-child(2)")
 
-	lastName := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(2) > div.sidebar-left-section > div > div.input-wrapper > div:nth-child(2) > div.input-field-input")
+	time.Sleep(1 * time.Second)
 
-	isComplete := false
-	for !isComplete {
+	isButtonSetPassword := c.checkElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.two-step-verification.two-step-verification-main.active > div.sidebar-content > div > div.sidebar-left-section-container > div > div:nth-child(3) > div > button")
 
-		helper.PrettyLog("info", fmt.Sprintf("| %s | Current Full Name: %s", c.phoneNumber, fmt.Sprintf("%s %s", firstName, lastName)))
+	if isButtonSetPassword {
+		// Click Button Set Password
+		c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.two-step-verification.two-step-verification-main.active > div.sidebar-content > div > div.sidebar-left-section-container > div > div:nth-child(3) > div > button")
+	} else {
+		helper.PrettyLog("info", "If Input Old Password Not Show Please Press Enter...")
 
-		if lastName != "" {
-			// Input First Name
-			lastName = strings.TrimSpace(helper.InputTerminal("Input New Last Name: "))
+		for {
+			oldPassword := strings.TrimSpace(helper.InputTerminal("Input Your Old Password: "))
+
+			// Input Old Password
+			c.inputText(page, oldPassword, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.two-step-verification.two-step-verification-enter-password.active > div.sidebar-content > div > div.sidebar-left-section-container > div > div > div.input-wrapper > div > input.input-field-input.is-empty")
+
+			// Click Continue
+			c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.two-step-verification.two-step-verification-enter-password.active > div.sidebar-content > div > div.sidebar-left-section-container > div > div > div.input-wrapper > button")
+
+			time.Sleep(1 * time.Second)
+
+			isPasswordCorrect := c.checkElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.two-step-verification.two-step-verification-main.active > div.sidebar-content > div > div.sidebar-left-section-container > div > div:nth-child(3) > button:nth-child(1)")
+
+			if !isPasswordCorrect {
+				helper.PrettyLog("warning", "Your Old Password Is Wrong, Please Input Correct Password, Try Again...")
+				c.removeTextFormInput(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.two-step-verification.two-step-verification-enter-password.active > div.sidebar-content > div > div.sidebar-left-section-container > div > div > div.input-wrapper > div > input.input-field-input.error")
+				continue
+			} else {
+				break
+			}
 		}
 
-		c.inputText(page, lastName, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(3) > div.sidebar-left-section > div > div.input-wrapper > div > input")
+		// Click Change Password
+		c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.two-step-verification.two-step-verification-main.active > div.sidebar-content > div > div.sidebar-left-section-container > div > div:nth-child(3) > button:nth-child(1)")
+	}
 
-		time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 
-		c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > button")
+	if batchPassword == "" {
+		batchPassword = strings.TrimSpace(helper.InputTerminal("Input New Password: "))
+	}
 
-		time.Sleep(1 * time.Second)
+	helper.PrettyLog("info", fmt.Sprintf("| %s | New Password: %s", c.phoneNumber, batchPassword))
 
-		helper.PrettyLog("success", fmt.Sprintf("| %s | Last Name Successfully Set", c.phoneNumber))
+	// Input Password
+	c.inputText(page, batchPassword, "div.sidebar-left-section-container > div > div > div.input-wrapper > div > input.input-field-input.is-empty")
 
-		isComplete = true
+	time.Sleep(2 * time.Second)
+
+	// Click Continue
+	c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.two-step-verification.two-step-verification-enter-password.active > div.sidebar-content > div > div.sidebar-left-section-container > div > div > div.input-wrapper > button")
+
+	time.Sleep(1 * time.Second)
+
+	// Input Re-enter Password
+	c.inputText(page, batchPassword, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.two-step-verification.two-step-verification-enter-password.two-step-verification-re-enter-password.active > div.sidebar-content > div > div.sidebar-left-section-container > div > div > div.input-wrapper > div > input.input-field-input.is-empty")
+
+	time.Sleep(2 * time.Second)
+
+	// Click Continue
+	c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.two-step-verification.two-step-verification-enter-password.two-step-verification-re-enter-password.active > div.sidebar-content > div > div.sidebar-left-section-container > div > div > div.input-wrapper > button")
+
+	time.Sleep(1 * time.Second)
+
+	// Click Skip Hint
+	c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.two-step-verification.two-step-verification-hint.active > div.sidebar-content > div > div.sidebar-left-section-container > div > div > div.input-wrapper > button.btn-primary.btn-secondary.btn-primary-transparent.primary.rp")
+
+	time.Sleep(1 * time.Second)
+
+	// Click Skip Recovery Email
+	c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.two-step-verification.two-step-verification-email.active > div.sidebar-content > div > div.sidebar-left-section-container > div > div:nth-child(3) > div > button.btn-primary.btn-secondary.btn-primary-transparent.primary.rp")
+
+	time.Sleep(1 * time.Second)
+
+	// Confirm Skip
+	c.clickElement(page, "body > div.popup.popup-peer.popup-skip-email.active > div > div.popup-buttons > button.popup-button.btn.danger.rp")
+
+	time.Sleep(1 * time.Second)
+
+	isPasswordSet := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.two-step-verification.two-step-verification-set.active > div.sidebar-header > div > span")
+
+	if isPasswordSet == "Password Set!" {
+		helper.PrettyLog("success", fmt.Sprintf("| %s | New Password Successfully Set", c.phoneNumber))
+	} else {
+		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed To Set Password", c.phoneNumber))
 	}
 }
 

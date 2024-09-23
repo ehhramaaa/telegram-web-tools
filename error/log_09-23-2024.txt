@@ -30,3 +30,8 @@
 | 17:22:10 | Invalid selection
 | 17:53:30 | Invalid selection
 | 17:53:53 | Invalid selection
+| 19:15:33 | | 27602760709 | Failed To Set Password
+| 20:36:36 | Failed to evaluate tagName: eval js error: TypeError: this.tagName.toLowerCase(...).apply is not a function
+    at HTMLDivElement.<anonymous> (<anonymous>:1:51) <nil>
+| 20:40:47 | Failed to evaluate tagName: eval js error: TypeError: (intermediate value)(intermediate value)(intermediate value).apply is not a function
+    at HTMLDivElement.<anonymous> (<anonymous>:1:71) <nil>

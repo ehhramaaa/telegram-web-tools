@@ -12,9 +12,9 @@ func settingAccountTools() {
 	subTools := []string{
 		"Get Detail Account",
 		"Set Account Username",
-		"Set First Name (Upcoming)",
-		"Set Last Name (Upcoming)",
-		"Set Account Password (Upcoming)",
+		"Set First Name",
+		"Set Last Name",
+		"Set Account Password (Skip Hint & Email Recovery)",
 	}
 
 	for index, tool := range subTools {
@@ -68,7 +68,25 @@ func setLastName() {
 	choice := helper.InputTerminal("Do You Want To Change Same Last Name For All Account ? (y/n) (default = n): ")
 
 	if choice == "y" || choice == "Y" {
-		lastName = strings.TrimSpace(helper.InputTerminal("Input Batch Last Name: "))
+		batchLastName = strings.TrimSpace(helper.InputTerminal("Input Batch Last Name: "))
+	}
+
+	files := helper.ReadFileDir(localStoragePath)
+
+	helper.PrettyLog("info", fmt.Sprintf("%v Session Local Storage Detected", len(files)))
+
+	selectedOptionsAccount = selectOptionsAccount(files)
+
+	processOptionsAccount(files, false)
+}
+
+func setAccountPassword() {
+	fmt.Println("<=====================[Set Account Password]=====================>")
+
+	choice := helper.InputTerminal("Do You Want To Change Same Password For All Account (Recommended) ? (y/n) (default = n): ")
+
+	if choice == "y" || choice == "Y" {
+		batchPassword = strings.TrimSpace(helper.InputTerminal("Input Batch Password: "))
 	}
 
 	files := helper.ReadFileDir(localStoragePath)

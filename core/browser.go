@@ -131,5 +131,40 @@ func (c *Client) removeTextFormInput(page *rod.Page, selector string) {
 
 	c.checkElement(page, selector)
 
-	page.MustElement(selector).MustSelectAllText().MustInput("")
+	// Dapatkan elemen berdasarkan selector, periksa apakah elemen ada
+	element, err := page.Element(selector)
+	if err != nil {
+		helper.PrettyLog("error", fmt.Sprintf("| %s | Element not found: %v", c.phoneNumber, err))
+		return
+	}
+	if element == nil {
+		helper.PrettyLog("error", fmt.Sprintf("| %s | Element is nil for selector: %s", c.phoneNumber, selector))
+		return
+	}
+
+	// Periksa apakah elemen adalah input atau div
+	tagName, err := element.Eval(`() => this.tagName.toLowerCase()`)
+	if err != nil {
+		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to get tag name: %v", c.phoneNumber, err))
+		return
+	}
+
+	switch tagName.Value.String() {
+	case "input":
+		// Jika elemen adalah input, hapus teks
+		page.MustElement(selector).MustSelectAllText().MustInput("")
+		if err != nil {
+			helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to clear input text: %v", c.phoneNumber, err))
+		}
+	case "div":
+		// Jika elemen adalah div, hapus teks menggunakan JavaScript
+		_, err = element.Eval(`() => { this.textContent = ""; }`)
+		if err != nil {
+			helper.PrettyLog("error", fmt.Sprintf("| %s | Failed To Remove Text From Input Field: %v", c.phoneNumber, err))
+		} else {
+			helper.PrettyLog("info", fmt.Sprintf("| %s | Remove Text From Input Field", c.phoneNumber))
+		}
+	default:
+		helper.PrettyLog("info", fmt.Sprintf("| %s | The element is not an input or div, skipping", c.phoneNumber))
+	}
 }

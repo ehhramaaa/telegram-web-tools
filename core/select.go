@@ -115,6 +115,12 @@ func (c *Client) selectProcess(file fs.DirEntry) {
 			c.processGetDetailAccount(file)
 		case 2:
 			c.processSetAccountUsername(file)
+		case 3:
+			c.processSetAccountFirstName(file)
+		case 4:
+			c.processSetAccountLastName(file)
+		case 5:
+			c.processSetAccountPassword(file)
 		}
 	case 4:
 		c.processStartBotWithAutoRef(file)
