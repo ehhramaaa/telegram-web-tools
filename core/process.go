@@ -429,6 +429,8 @@ func (c *Client) processFreeRoam(file fs.DirEntry) {
 		return
 	}
 
+	helper.ClearInputTerminal()
+
 	helper.InputTerminal("Just press enter to next account or completing free roam...")
 
 	return
