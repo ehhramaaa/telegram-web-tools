@@ -10,7 +10,11 @@ import (
 	"telegram-web/helper"
 )
 
-func selectOptionsAccount() int {
+func selectOptionsAccount(files []fs.DirEntry) int {
+	if len(files) == 1 {
+		return 1
+	}
+
 	options := []string{
 		"Select All Account",
 		"Select Custom Account",

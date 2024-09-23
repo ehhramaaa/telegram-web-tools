@@ -46,7 +46,7 @@ func getQueryData() {
 
 	helper.PrettyLog("info", fmt.Sprintf("%v Session Local Storage Detected", len(files)))
 
-	selectedOptionsAccount = selectOptionsAccount()
+	selectedOptionsAccount = selectOptionsAccount(files)
 
 	processOptionsAccount(files, true)
 }

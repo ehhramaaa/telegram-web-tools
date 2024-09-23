@@ -33,7 +33,7 @@ func getDetailAccount() {
 
 	helper.PrettyLog("info", fmt.Sprintf("%v Session Local Storage Detected", len(files)))
 
-	selectedOptionsAccount = selectOptionsAccount()
+	selectedOptionsAccount = selectOptionsAccount(files)
 
 	processOptionsAccount(files, true)
 }
@@ -45,7 +45,7 @@ func setUsername() {
 
 	helper.PrettyLog("info", fmt.Sprintf("%v Session Local Storage Detected", len(files)))
 
-	selectedOptionsAccount = selectOptionsAccount()
+	selectedOptionsAccount = selectOptionsAccount(files)
 
 	processOptionsAccount(files, false)
 }
@@ -57,7 +57,7 @@ func setFirstName() {
 
 	helper.PrettyLog("info", fmt.Sprintf("%v Session Local Storage Detected", len(files)))
 
-	selectedOptionsAccount = selectOptionsAccount()
+	selectedOptionsAccount = selectOptionsAccount(files)
 
 	processOptionsAccount(files, false)
 }
@@ -75,7 +75,7 @@ func setLastName() {
 
 	helper.PrettyLog("info", fmt.Sprintf("%v Session Local Storage Detected", len(files)))
 
-	selectedOptionsAccount = selectOptionsAccount()
+	selectedOptionsAccount = selectOptionsAccount(files)
 
 	processOptionsAccount(files, false)
 }
