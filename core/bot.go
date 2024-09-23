@@ -17,7 +17,7 @@ func getLocalStorageSession() {
 		passwordAccount := config.String("ACCOUNT_PASSWORD")
 
 		launchOptions := launcher.New().
-			Headless(config.Bool("HEADLESS")).
+			Headless(config.Bool("HEADLESS_MODE")).
 			MustLaunch()
 
 		browser := rod.New().ControlURL(launchOptions).MustConnect()
