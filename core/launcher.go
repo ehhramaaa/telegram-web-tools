@@ -9,8 +9,9 @@ import (
 
 var selectedMainTools, selectedSubTools, selectedOptionsAccount int
 var localStoragePath, localStorageExpiredPath, queryDataPath, detailAccountPath string
-var selectedBotList string
+var selectedBotList, channelUsername string
 var indexBotList int
+var lastName string
 
 func initConfig() {
 	outputPath := "./output"
@@ -47,22 +48,20 @@ func LaunchBot() {
 		helper.PrintLogo()
 
 		mainTools := []string{
-			"Exits Program",
 			"Get Local Storage Session",
 			"Join Skibidi Sigma Code Community",
 			"Setting Account Tools",
 			"Start Bot With Auto Ref",
 			"Query Data Tools",
+			"Auto Subscribe Telegram Channel",
 			"Free Roam",
-			"Auto Join Telegram Group (Upcoming)",
-			"Auto Subscribe Telegram Channel (Upcoming)",
 		}
 
 		for index, tool := range mainTools {
-			helper.PrettyLog(fmt.Sprintf("%v", index), tool)
+			helper.PrettyLog(fmt.Sprintf("%v", index+1), tool)
 		}
 
-		selectedMainTools = helper.InputChoice(len(mainTools))
+		selectedMainTools = helper.InputChoice(len(mainTools) + 1)
 
 		processSelectedMainTools()
 

@@ -25,3 +25,8 @@
 | 15:11:57 | Failed to read file merge: read ./output/query-data/UnionEx_official_bot/merge: Incorrect function.
 | 15:13:07 | Failed to read file merge: read ./output/query-data/UnionEx_official_bot/merge: Incorrect function.
 | 15:13:28 | Failed to read file merge: read ./output/query-data/UnionEx_official_bot/merge: Incorrect function.
+| 17:17:31 | Invalid selection
+| 17:22:10 | Invalid selection
+| 17:22:10 | Invalid selection
+| 17:53:30 | Invalid selection
+| 17:53:53 | Invalid selection

@@ -1,8 +1,10 @@
 package core
 
 import (
+	"bufio"
 	"fmt"
 	"io/fs"
+	"os"
 	"strconv"
 	"strings"
 	"telegram-web/helper"
@@ -102,7 +104,7 @@ func selectAccount(files []fs.DirEntry) []int {
 func (c *Client) selectProcess(file fs.DirEntry) {
 	switch selectedMainTools {
 	case 2:
-		c.processJoinSkibidiSigmaCode(file)
+		c.processAutoSubscribeChannel(file)
 	case 3:
 		switch selectedSubTools {
 		case 1:
@@ -120,6 +122,8 @@ func (c *Client) selectProcess(file fs.DirEntry) {
 			mergeQueryData()
 		}
 	case 6:
+		c.processAutoSubscribeChannel(file)
+	case 7:
 		c.processFreeRoam(file)
 	}
 }
@@ -161,6 +165,9 @@ func selectCountry() string {
 				continue
 			}
 		}
+
+		reader := bufio.NewReader(os.Stdin)
+		_, _ = reader.ReadString('\n')
 
 		// Try to parse the input as an integer (country index)
 		if countryIndex, err := strconv.Atoi(input); err == nil {

@@ -17,6 +17,11 @@ import (
 )
 
 func processSelectedMainTools() {
+	if selectedMainTools != 1 && !helper.CheckFileOrFolder(localStoragePath) {
+		helper.PrettyLog("error", "You'r not have a local storage session, Please Get Local Storage Session First...")
+		return
+	}
+
 	switch selectedMainTools {
 	case 0:
 		helper.PrettyLog("success", "Exiting Program...")
@@ -37,10 +42,11 @@ func processSelectedMainTools() {
 		queryDataTools()
 		return
 	case 6:
+		autoSubscribeChannel()
+		return
+	case 7:
 		freeRoam()
 		return
-	case 7, 8:
-		helper.PrettyLog("info", "Feature Is Upcoming...")
 	}
 }
 
@@ -54,8 +60,11 @@ func processSelectedSubTools() {
 		case 2:
 			setUsername()
 			return
-		case 3, 4, 5:
-			helper.PrettyLog("info", "Feature Is Upcoming...")
+		case 3:
+			setFirstName()
+			return
+		case 4:
+			setLastName()
 			return
 		}
 	case 5:
@@ -574,27 +583,6 @@ func (c *Client) processGetDetailAccount(file fs.DirEntry) {
 	}
 }
 
-func (c *Client) processJoinSkibidiSigmaCode(file fs.DirEntry) {
-	page := c.Browser.MustPage()
-
-	// Set Local Storage
-	isLogin := c.processSetLocalStorage(page, file)
-
-	if !isLogin {
-		return
-	}
-
-	// Search
-	c.searchBot(page, "skibidi_sigma_code")
-
-	helper.PrettyLog("info", fmt.Sprintf("| %s | Joining Skibidi Sigma Code Channel...", c.phoneNumber))
-
-	// Click Subscribe
-	c.clickElement(page, "#column-center > div > div > div.sidebar-header.topbar.has-avatar > div.chat-info-container > div.chat-utils > button.btn-primary.btn-color-primary.chat-join.rp")
-
-	helper.PrettyLog("success", fmt.Sprintf("| %s | Joining Skibidi Sigma Code Channel Successfully...", c.phoneNumber))
-}
-
 func (c *Client) processStartBotWithAutoRef(file fs.DirEntry) {
 
 	refUrl := config.String(fmt.Sprintf("BOT_LIST.%v.%s.REF_URL", indexBotList, selectedBotList))
@@ -640,7 +628,7 @@ func (c *Client) processStartBotWithAutoRef(file fs.DirEntry) {
 		for _, selector := range selectors {
 			c.clickElement(iframePage, selector)
 			time.Sleep(2 * time.Second)
-			iframePage.MustWaitDOMStable()
+			iframePage.MustWaitNavigation()
 		}
 
 		helper.PrettyLog("success", fmt.Sprintf("| %s | Clicking Selector Bot Completed...", c.phoneNumber))
@@ -731,5 +719,142 @@ func (c *Client) processSetAccountUsername(file fs.DirEntry) {
 		helper.PrettyLog("success", fmt.Sprintf("| %s | Username Successfully Set", c.phoneNumber))
 
 		isComplete = true
+	}
+}
+
+func (c *Client) processSetFirstName(file fs.DirEntry) {
+	page := c.Browser.MustPage()
+
+	// Set Local Storage
+	isLogin := c.processSetLocalStorage(page, file)
+
+	if !isLogin {
+		return
+	}
+
+	// Click Ripple Button
+	c.clickElement(page, "#column-left > div > div > div.sidebar-header.can-have-forum > div.sidebar-header__btn-container > button")
+
+	time.Sleep(1 * time.Second)
+
+	isSetting := c.gotoSetting(page)
+
+	if !isSetting {
+		return
+	}
+
+	time.Sleep(1 * time.Second)
+
+	// Click Edit Profile
+	c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.settings-container.profile-container.is-collapsed.active > div.sidebar-header > button:nth-child(3)")
+
+	time.Sleep(1 * time.Second)
+
+	firstName := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(2) > div.sidebar-left-section > div > div.input-wrapper > div:nth-child(1) > div.input-field-input")
+
+	lastName := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(2) > div.sidebar-left-section > div > div.input-wrapper > div:nth-child(2) > div.input-field-input")
+
+	isComplete := false
+	for !isComplete {
+
+		helper.PrettyLog("info", fmt.Sprintf("| %s | Current Full Name: %s", c.phoneNumber, fmt.Sprintf("%s %s", firstName, lastName)))
+
+		// Input First Name
+		firstName := strings.TrimSpace(helper.InputTerminal("Input New First Name: "))
+
+		c.inputText(page, firstName, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(3) > div.sidebar-left-section > div > div.input-wrapper > div > input")
+
+		time.Sleep(2 * time.Second)
+
+		c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > button")
+
+		time.Sleep(1 * time.Second)
+
+		helper.PrettyLog("success", fmt.Sprintf("| %s | First Name Successfully Set", c.phoneNumber))
+
+		isComplete = true
+	}
+}
+
+func (c *Client) processSetLastName(file fs.DirEntry) {
+	page := c.Browser.MustPage()
+
+	// Set Local Storage
+	isLogin := c.processSetLocalStorage(page, file)
+
+	if !isLogin {
+		return
+	}
+
+	// Click Ripple Button
+	c.clickElement(page, "#column-left > div > div > div.sidebar-header.can-have-forum > div.sidebar-header__btn-container > button")
+
+	time.Sleep(1 * time.Second)
+
+	isSetting := c.gotoSetting(page)
+
+	if !isSetting {
+		return
+	}
+
+	time.Sleep(1 * time.Second)
+
+	// Click Edit Profile
+	c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.settings-container.profile-container.is-collapsed.active > div.sidebar-header > button:nth-child(3)")
+
+	time.Sleep(1 * time.Second)
+
+	firstName := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(2) > div.sidebar-left-section > div > div.input-wrapper > div:nth-child(1) > div.input-field-input")
+
+	lastName := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(2) > div.sidebar-left-section > div > div.input-wrapper > div:nth-child(2) > div.input-field-input")
+
+	isComplete := false
+	for !isComplete {
+
+		helper.PrettyLog("info", fmt.Sprintf("| %s | Current Full Name: %s", c.phoneNumber, fmt.Sprintf("%s %s", firstName, lastName)))
+
+		if lastName != "" {
+			// Input First Name
+			lastName = strings.TrimSpace(helper.InputTerminal("Input New Last Name: "))
+		}
+
+		c.inputText(page, lastName, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(3) > div.sidebar-left-section > div > div.input-wrapper > div > input")
+
+		time.Sleep(2 * time.Second)
+
+		c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > button")
+
+		time.Sleep(1 * time.Second)
+
+		helper.PrettyLog("success", fmt.Sprintf("| %s | Last Name Successfully Set", c.phoneNumber))
+
+		isComplete = true
+	}
+}
+
+func (c *Client) processAutoSubscribeChannel(file fs.DirEntry) {
+	page := c.Browser.MustPage()
+
+	// Set Local Storage
+	isLogin := c.processSetLocalStorage(page, file)
+
+	if !isLogin {
+		return
+	}
+
+	// Search
+	c.searchBot(page, channelUsername)
+
+	helper.PrettyLog("info", fmt.Sprintf("| %s | Subscribing %s Channel...", c.phoneNumber, channelUsername))
+
+	isSubscribeButton := c.checkElement(page, "#column-center > div > div > div.sidebar-header.topbar.has-avatar > div.chat-info-container > div.chat-utils > button.btn-primary.btn-color-primary.chat-join.rp")
+
+	if isSubscribeButton {
+		// Click Subscribe
+		c.clickElement(page, "#column-center > div > div > div.sidebar-header.topbar.has-avatar > div.chat-info-container > div.chat-utils > button.btn-primary.btn-color-primary.chat-join.rp")
+
+		helper.PrettyLog("success", fmt.Sprintf("| %s | Subscribing %s Channel Successfully...", c.phoneNumber, channelUsername))
+	} else {
+		helper.PrettyLog("success", fmt.Sprintf("| %s | Already Subscribing %s Channel...", c.phoneNumber, channelUsername))
 	}
 }

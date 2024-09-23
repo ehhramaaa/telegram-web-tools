@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"strings"
 	"telegram-web/helper"
 
 	"github.com/go-rod/rod"
@@ -78,6 +79,22 @@ func startBotWithAutoRef() {
 
 func joinSkibidiSigmaCode() {
 	fmt.Println("<=====================[Join Skibidi Sigma Code Community]=====================>")
+
+	channelUsername = "skibidi_sigma_code"
+
+	files := helper.ReadFileDir(localStoragePath)
+
+	helper.PrettyLog("info", fmt.Sprintf("%v Session Local Storage Detected", len(files)))
+
+	selectedOptionsAccount = 1
+
+	processOptionsAccount(files, true)
+}
+
+func autoSubscribeChannel() {
+	fmt.Println("<=====================[Auto Subscribe Telegram Channel]=====================>")
+
+	channelUsername = strings.TrimSpace(helper.InputTerminal("Input Channel Username: "))
 
 	files := helper.ReadFileDir(localStoragePath)
 

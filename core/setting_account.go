@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"strings"
 	"telegram-web/helper"
 )
 
@@ -39,6 +40,36 @@ func getDetailAccount() {
 
 func setUsername() {
 	fmt.Println("<=====================[Set Account Username]=====================>")
+
+	files := helper.ReadFileDir(localStoragePath)
+
+	helper.PrettyLog("info", fmt.Sprintf("%v Session Local Storage Detected", len(files)))
+
+	selectedOptionsAccount = selectOptionsAccount()
+
+	processOptionsAccount(files, false)
+}
+
+func setFirstName() {
+	fmt.Println("<=====================[Set Account First Name]=====================>")
+
+	files := helper.ReadFileDir(localStoragePath)
+
+	helper.PrettyLog("info", fmt.Sprintf("%v Session Local Storage Detected", len(files)))
+
+	selectedOptionsAccount = selectOptionsAccount()
+
+	processOptionsAccount(files, false)
+}
+
+func setLastName() {
+	fmt.Println("<=====================[Set Account Last Name]=====================>")
+
+	choice := helper.InputTerminal("Do You Want To Change Same Last Name For All Account ? (y/n) (default = n): ")
+
+	if choice == "y" || choice == "Y" {
+		lastName = strings.TrimSpace(helper.InputTerminal("Input Batch Last Name: "))
+	}
 
 	files := helper.ReadFileDir(localStoragePath)
 
