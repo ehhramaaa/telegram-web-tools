@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 )
@@ -44,7 +45,30 @@ func PrettyLog(level, message string) {
 	} else {
 		levelColor.Printf("[%s] ", level)
 		fmt.Printf("%s\n", message)
+
+		if level == "ERROR" {
+			fileName := fmt.Sprintf("./error/log_%s.txt", time.Now().Format("01-02-2006"))
+
+			SaveFileTxt(fileName, fmt.Sprintf("| %s | %s", time.Now().Format("15:04:05"), message))
+		}
 	}
+}
+
+func PrintLogo() {
+	levelColor := color.New(color.FgCyan)
+
+	levelColor.Println(`
+ /$$$$$$$$        /$$                 /$$      /$$           /$$             /$$$$$$$$                  /$$          
+|__  $$__/       | $$                | $$  /$ | $$          | $$            |__  $$__/                 | $$          
+   | $$  /$$$$$$ | $$  /$$$$$$       | $$ /$$$| $$  /$$$$$$ | $$$$$$$          | $$  /$$$$$$   /$$$$$$ | $$  /$$$$$$$
+   | $$ /$$__  $$| $$ /$$__  $$      | $$/$$ $$ $$ /$$__  $$| $$__  $$         | $$ /$$__  $$ /$$__  $$| $$ /$$_____/
+   | $$| $$$$$$$$| $$| $$$$$$$$      | $$$$_  $$$$| $$$$$$$$| $$  \ $$         | $$| $$  \ $$| $$  \ $$| $$|  $$$$$$ 
+   | $$| $$_____/| $$| $$_____/      | $$$/ \  $$$| $$_____/| $$  | $$         | $$| $$  | $$| $$  | $$| $$ \____  $$
+   | $$|  $$$$$$$| $$|  $$$$$$$      | $$/   \  $$|  $$$$$$$| $$$$$$$/         | $$|  $$$$$$/|  $$$$$$/| $$ /$$$$$$$/
+   |__/ \_______/|__/ \_______/      |__/     \__/ \_______/|_______/          |__/ \______/  \______/ |__/|_______/ 
+`)
+
+	levelColor.Println("ρσωєяє∂ ву: ѕкιвι∂ι ѕιgмα ¢σ∂є")
 }
 
 func ClearTerminal() {

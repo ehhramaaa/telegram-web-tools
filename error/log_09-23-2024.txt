@@ -1,0 +1,27 @@
+| 08:59:26 | | 27617749132 | Session Expired Or Account Banned, Please Check Your Account...
+| 09:02:10 | Invalid selection: n. Please try again.
+| 09:05:04 | | 27603470969 | Failed To Launch Bot: Iframe Not Detected
+| 09:05:05 | | 27612799483 | Failed To Launch Bot: Iframe Not Detected
+| 09:05:37 | | 27617595725 | Failed To Launch Bot: Iframe Not Detected
+| 09:05:57 | | 27617299295 | Failed To Launch Bot: Iframe Not Detected
+| 09:06:09 | | 27617382474 | Failed To Launch Bot: Iframe Not Detected
+| 09:07:34 | | 27606904727 | Failed To Launch Bot: Iframe Not Detected
+| 09:10:41 | | 27617382474 | Failed To Launch Bot: Iframe Not Detected
+| 09:10:41 | | 27617595725 | Failed To Launch Bot: Iframe Not Detected
+| 09:11:14 | | 27612799483 | Failed To Launch Bot: Iframe Not Detected
+| 14:53:40 | Failed to read file merge: read ./output/query-data/UnionEx_official_bot/merge: Incorrect function.
+| 14:55:29 | Failed to read file merge: read ./output/query-data/UnionEx_official_bot/merge: Incorrect function.
+| 14:57:37 | Invalid selection
+| 14:57:44 | Failed to read file merge: read ./output/query-data/UnionEx_official_bot/merge: Incorrect function.
+| 14:59:25 | Invalid selection
+| 14:59:33 | Failed to read file merge: read ./output/query-data/UnionEx_official_bot/merge: Incorrect function.
+| 15:00:11 | Failed to read file merge: read ./output/query-data/UnionEx_official_bot/merge: Incorrect function.
+| 15:00:19 | Invalid selection
+| 15:02:12 | Failed to read file merge: read ./output/query-data/the_capybara_meme_bot/merge: Incorrect function.
+| 15:03:20 | Invalid selection
+| 15:03:47 | No query data or only one file in the_capybara_meme_bot
+| 15:05:06 | Failed to read file merge: read ./output/query-data/UnionEx_official_bot/merge: Incorrect function.
+| 15:09:42 | Failed to read file merge: read ./output/query-data/UnionEx_official_bot/merge: Incorrect function.
+| 15:11:57 | Failed to read file merge: read ./output/query-data/UnionEx_official_bot/merge: Incorrect function.
+| 15:13:07 | Failed to read file merge: read ./output/query-data/UnionEx_official_bot/merge: Incorrect function.
+| 15:13:28 | Failed to read file merge: read ./output/query-data/UnionEx_official_bot/merge: Incorrect function.

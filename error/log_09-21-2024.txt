@@ -1,0 +1,27 @@
+| 13:15:45 | Invalid selection
+| 13:17:13 | Invalid selection
+| 13:19:18 | Invalid selection
+| 13:19:55 | Phone Number Invalid, Please Try Again...
+| 13:23:49 | Invalid selection
+| 13:27:30 | Invalid selection
+| 13:28:04 | Phone Number Invalid, Please Try Again...
+| 13:28:35 | Phone Number Invalid, Please Try Again...
+| 21:28:37 | | +6283862180349 | Session Expired Or Account Banned, Please Check Your Account...
+| 21:30:05 | | 27607558737 | Session Expired Or Account Banned, Please Check Your Account...
+| 21:35:53 | Invalid selection
+| 21:38:46 | Invalid selection
+| 21:46:37 | | 83862180349 | Failed To Launch Bot: Iframe Not Detected
+| 21:49:12 | | 27602760709 | Failed To Launch Bot: Iframe Not Detected
+| 21:49:13 | | 27603470969 | Failed To Launch Bot: Iframe Not Detected
+| 21:49:40 | | 27606082945 | Failed To Launch Bot: Iframe Not Detected
+| 21:49:46 | | 27613653204 | Failed To Launch Bot: Iframe Not Detected
+| 21:50:03 | | 27606904727 | Failed To Launch Bot: Iframe Not Detected
+| 21:50:23 | | 27607558737 | Failed To Launch Bot: Iframe Not Detected
+| 21:50:35 | | 27608425893 | Failed To Launch Bot: Iframe Not Detected
+| 21:50:37 | | 27609412626 | Failed To Launch Bot: Iframe Not Detected
+| 21:51:03 | | 27612799483 | Failed To Launch Bot: Iframe Not Detected
+| 21:51:24 | | 27617299295 | Failed To Launch Bot: Iframe Not Detected
+| 21:51:26 | | 27617382474 | Failed To Launch Bot: Iframe Not Detected
+| 21:51:27 | | 27617529326 | Failed To Launch Bot: Iframe Not Detected
+| 21:52:13 | | 27617749132 | Failed To Launch Bot: Iframe Not Detected
+| 22:15:25 | | 27612799483 | Failed To Launch Bot: Iframe Not Detected

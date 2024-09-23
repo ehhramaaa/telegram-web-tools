@@ -30,16 +30,19 @@ func InputTerminal(prompt string) string {
 	return strings.TrimSpace(value)
 }
 
-func InputChoice() int {
+func InputChoice(length int) int {
 	var choice int
 
 	PrettyLog("input", "Select Choice: ")
 
 	_, err := fmt.Scan(&choice)
-	if err != nil || choice <= 0 || choice > 3 {
+	if err != nil || choice <= 0 || choice > length {
 		PrettyLog("error", "Invalid selection")
 		return 0
 	}
+
+	reader := bufio.NewReader(os.Stdin)
+	_, _ = reader.ReadString('\n')
 
 	return choice
 }
@@ -172,9 +175,4 @@ func GetTextAfterKey(urlData, key string) (string, error) {
 	}
 
 	return urlData[startIndex : startIndex+endIndex], nil
-}
-
-func ClearInputTerminal() {
-	reader := bufio.NewReader(os.Stdin)
-	_, _ = reader.ReadString('\n')
 }

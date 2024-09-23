@@ -11,7 +11,12 @@ func main() {
 	// Load Config
 	config.AddDriver(yaml.Driver)
 
-	err := config.LoadFiles("config.yml")
+	err := config.LoadFiles("config/config.yml")
+	if err != nil {
+		panic(err)
+	}
+
+	err = config.LoadFiles("config/start_bot_with_auto_ref.yml")
 	if err != nil {
 		panic(err)
 	}

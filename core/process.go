@@ -14,8 +14,122 @@ import (
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/proto"
 	"github.com/gookit/config/v2"
-
 )
+
+func processSelectedMainTools() {
+	switch selectedMainTools {
+	case 0:
+		helper.PrettyLog("success", "Exiting Program...")
+		os.Exit(0)
+	case 1:
+		getLocalStorageSession()
+		return
+	case 2:
+		joinSkibidiSigmaCode()
+		return
+	case 3:
+		settingAccountTools()
+		return
+	case 4:
+		startBotWithAutoRef()
+		return
+	case 5:
+		queryDataTools()
+		return
+	case 6:
+		freeRoam()
+		return
+	case 7, 8:
+		helper.PrettyLog("info", "Feature Is Upcoming...")
+	}
+}
+
+func processSelectedSubTools() {
+	switch selectedMainTools {
+	case 3:
+		switch selectedSubTools {
+		case 1:
+			getDetailAccount()
+			return
+		case 2:
+			setUsername()
+			return
+		case 3, 4, 5:
+			helper.PrettyLog("info", "Feature Is Upcoming...")
+			return
+		}
+	case 5:
+		switch selectedSubTools {
+		case 1:
+			getQueryData()
+			return
+		case 2:
+			mergeQueryData()
+			return
+		}
+	}
+}
+
+func processOptionsAccount(files []fs.DirEntry, isMultiThread bool) {
+	maxThread := config.Int("MAX_THREAD")
+
+	var wg sync.WaitGroup
+	var semaphore chan struct{}
+
+	switch selectedOptionsAccount {
+	case 1:
+		if isMultiThread {
+			if maxThread > len(files) {
+				maxThread = len(files)
+			}
+
+			semaphore = make(chan struct{}, maxThread)
+			for _, file := range files {
+				wg.Add(1)
+				go processAccountMultiThread(&semaphore, &wg, file)
+			}
+			wg.Wait()
+		} else {
+			if len(files) == 1 {
+				processAccountSingleThread(files[0])
+				return
+			} else {
+				for _, file := range files {
+					processAccountSingleThread(file)
+				}
+			}
+		}
+	case 2:
+		selectedAccount := selectAccount(files)
+
+		if len(selectedAccount) == 0 {
+			return
+		}
+
+		if len(selectedAccount) == 1 {
+			processAccountSingleThread(files[selectedAccount[0]-1])
+			return
+		} else {
+			if isMultiThread {
+				if maxThread > len(selectedAccount) {
+					maxThread = len(selectedAccount)
+				}
+
+				semaphore = make(chan struct{}, maxThread)
+
+				for _, account := range selectedAccount {
+					wg.Add(1)
+					go processAccountMultiThread(&semaphore, &wg, files[account-1])
+				}
+				wg.Wait()
+			} else {
+				for _, account := range selectedAccount {
+					processAccountSingleThread(files[account-1])
+				}
+			}
+		}
+	}
+}
 
 func processAccountMultiThread(semaphore *chan struct{}, wg *sync.WaitGroup, file fs.DirEntry) {
 	defer wg.Done()
@@ -58,106 +172,14 @@ func processAccountSingleThread(file fs.DirEntry) {
 	helper.PrettyLog("info", fmt.Sprintf("| %s | Launch Bot Finished...", client.phoneNumber))
 }
 
-func (c *Client) selectProcess(file fs.DirEntry) {
-	botUsername := config.String("BOT_USERNAME")
-	refUrl := config.String("START_BOT_WITH_AUTO_REF.REF_URL")
-
-	switch selectedTools {
-	case 2:
-		c.processJoinSkibidiSigmaCode(file)
-	case 3:
-		c.processFreeRoam(file)
-	case 4:
-		c.processGetDetailAccount(file)
-	case 5:
-		c.processSetAccountUsername(file)
-	case 6:
-		c.processStartBotWithAutoRef(file, botUsername, refUrl)
-	case 7:
-		c.processGetQueryData(file, botUsername)
-	}
-}
-
-func (c *Client) setLocalStorage(page *rod.Page, file fs.DirEntry) {
-	account, err := helper.ReadFileJson(filepath.Join(localStoragePath, file.Name()))
-	if err != nil {
-		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to read file %s: %v", c.phoneNumber, file.Name(), err))
-		return
-	}
-
-	// Membuka halaman kosong terlebih dahulu
-	c.navigate(page, "https://web.telegram.org/k/")
-
-	page.MustWaitLoad()
-
-	time.Sleep(2 * time.Second)
-
-	// Evaluasi JavaScript untuk menyimpan data ke localStorage
-	switch v := account.(type) {
-	case []map[string]interface{}:
-		// Jika data adalah array of maps
-		for _, acc := range v {
-			for key, value := range acc {
-				page.Eval(fmt.Sprintf(`localStorage.setItem('%s', '%s');`, key, value))
-			}
-		}
-	case map[string]interface{}:
-		// Jika data adalah single map
-		for key, value := range v {
-			page.Eval(fmt.Sprintf(`localStorage.setItem('%s', '%s');`, key, value))
-		}
-	default:
-		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to Evaluate Local Storage: Unknown Data Type", c.phoneNumber))
-		return
-	}
-
-	helper.PrettyLog("success", fmt.Sprintf("| %s | Local storage successfully set | Sleep 5s Before Navigating...", c.phoneNumber))
-
-	time.Sleep(5 * time.Second)
-
-	helper.PrettyLog("info", fmt.Sprintf("| %s | Navigating Telegram...", c.phoneNumber))
-
-	page.MustReload()
-	page.MustWaitLoad()
-}
-
-func (c *Client) processFreeRoam(file fs.DirEntry) {
-	page := c.Browser.MustPage()
-
-	c.setLocalStorage(page, file)
-
-	helper.ClearInputTerminal()
-
-	helper.InputTerminal("Just press enter if free roam already completed...")
-
-	return
-}
-
-func (c *Client) processJoinSkibidiSigmaCode(file fs.DirEntry) {
-	page := c.Browser.MustPage()
-
-	// Set Local Storage
-	c.setLocalStorage(page, file)
-
-	// Search
-	c.searchBot(page, "skibidi_sigma_code")
-
-	helper.PrettyLog("info", fmt.Sprintf("| %s | Joining Skibidi Sigma Code Channel...", c.phoneNumber))
-
-	// Click Subscribe
-	c.clickElement(page, "#column-center > div > div > div.sidebar-header.topbar.has-avatar > div.chat-info-container > div.chat-utils > button.btn-primary.btn-color-primary.chat-join.rp")
-
-	helper.PrettyLog("success", fmt.Sprintf("| %s | Joining Skibidi Sigma Code Channel Successfully...", c.phoneNumber))
-}
-
 func (c *Client) processGetLocalStorageSession(passwordAccount string, sessionsPath string, country string) {
 	var phone, otpCode string
+
+	helper.PrettyLog("info", "Launch Browser...")
 
 	page := c.Browser.MustPage()
 
 	c.navigate(page, "https://web.telegram.org/a/")
-
-	helper.ClearInputTerminal()
 
 	isStop := false
 	for !isStop {
@@ -290,7 +312,7 @@ func (c *Client) processGetLocalStorageSession(passwordAccount string, sessionsP
 		return
 	}
 
-	filePath := fmt.Sprintf("%s/%s.json", sessionsPath, phone)
+	filePath := fmt.Sprintf("%s/%s.json", sessionsPath, c.phoneNumber)
 
 	var existingData []map[string]interface{}
 
@@ -317,180 +339,100 @@ func (c *Client) processGetLocalStorageSession(passwordAccount string, sessionsP
 		return
 	}
 
-	helper.PrettyLog("success", fmt.Sprintf("Data berhasil disimpan ke %s", filePath))
+	return
 }
 
-func (c *Client) processGetDetailAccount(file fs.DirEntry) {
-	page := c.Browser.MustPage()
+func (c *Client) processSetLocalStorage(page *rod.Page, file fs.DirEntry) bool {
+	account, err := helper.ReadFileJson(filepath.Join(localStoragePath, file.Name()))
+	if err != nil {
+		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to read file %s: %v", c.phoneNumber, file.Name(), err))
+		return false
+	}
 
-	// Set Local Storage
-	c.setLocalStorage(page, file)
+	// Membuka halaman kosong terlebih dahulu
+	c.navigate(page, "https://web.telegram.org/k/")
 
-	// Search Bot
-	c.searchBot(page, "userinfobot")
+	page.MustWaitLoad()
 
-	// Send Message
-	c.sendMessage(page, "/start", true)
+	time.Sleep(2 * time.Second)
 
-	// Get Message
-	message := c.getLastChat(page)
-
-	result := make(map[string]string)
-
-	// Pisahkan text menjadi baris-baris
-	lines := strings.Split(message, "\n")
-
-	// Iterasi setiap baris
-	for _, line := range lines {
-		// Jika baris mengandung ": ", kita pisah berdasarkan itu
-		if strings.Contains(line, ": ") {
-			parts := strings.SplitN(line, ": ", 2) // Split menjadi 2 bagian: kunci dan nilai
-			key := parts[0]                        // Bagian pertama adalah kunci
-			value := parts[1]                      // Bagian kedua adalah nilai
-			result[key] = value                    // Masukkan ke dalam map
-		} else if strings.HasPrefix(line, "@") {
-			// Jika baris diawali dengan @, hapus @ dan simpan username
-			result["username"] = strings.TrimPrefix(strings.TrimSpace(line), "@")
+	// Evaluasi JavaScript untuk menyimpan data ke localStorage
+	switch v := account.(type) {
+	case []map[string]interface{}:
+		// Jika data adalah array of maps
+		for _, acc := range v {
+			for key, value := range acc {
+				page.Eval(fmt.Sprintf(`localStorage.setItem('%s', '%s');`, key, value))
+			}
 		}
+	case map[string]interface{}:
+		// Jika data adalah single map
+		for key, value := range v {
+			page.Eval(fmt.Sprintf(`localStorage.setItem('%s', '%s');`, key, value))
+		}
+	default:
+		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed to Evaluate Local Storage: Unknown Data Type", c.phoneNumber))
+		return false
 	}
 
-	filePath := fmt.Sprintf("%s/detail_account_%s.json", detailAccountPath, c.phoneNumber)
+	helper.PrettyLog("success", fmt.Sprintf("| %s | Local storage successfully set | Check Login Status...", c.phoneNumber))
 
-	helper.SaveFileJson(filePath, result)
+	page.MustReload()
+	page.MustWaitLoad()
 
-	if helper.CheckFileOrFolder(filePath) {
-		helper.PrettyLog("success", fmt.Sprintf(fmt.Sprintf("| %s | Detail Account Successfully Saved", c.phoneNumber)))
-	} else {
-		helper.PrettyLog("error", fmt.Sprintf("| %s | Detail Account Failed Saved", c.phoneNumber))
+	time.Sleep(3 * time.Second)
+
+	isSessionExpired := c.checkElement(page, "#auth-pages > div > div.tabs-container.auth-pages__container > div.tabs-tab.page-signQR.active > div > div.input-wrapper > button")
+
+	if isSessionExpired {
+		helper.PrettyLog("error", fmt.Sprintf("| %s | Session Expired Or Account Banned, Please Check Your Account...", c.phoneNumber))
+
+		helper.PrettyLog("info", fmt.Sprintf("| %s | Move Session File To Expired Folder | You Can Try Get Local Storage Again After Check Account...", c.phoneNumber))
+
+		if !helper.CheckFileOrFolder(localStorageExpiredPath) {
+			os.Mkdir(localStorageExpiredPath, 0755)
+		}
+
+		os.Rename(filepath.Join(localStoragePath, file.Name()), filepath.Join(localStorageExpiredPath, file.Name()))
+
+		return false
 	}
+
+	helper.PrettyLog("success", fmt.Sprintf("| %s | Login successfully | Sleep 5s Before Navigate...", c.phoneNumber))
+
+	time.Sleep(5 * time.Second)
+
+	helper.PrettyLog("info", fmt.Sprintf("| %s | Navigating Telegram...", c.phoneNumber))
+
+	return true
 }
 
-func (c *Client) processSetAccountUsername(file fs.DirEntry) {
+func (c *Client) processFreeRoam(file fs.DirEntry) {
 	page := c.Browser.MustPage()
 
 	// Set Local Storage
-	c.setLocalStorage(page, file)
+	isLogin := c.processSetLocalStorage(page, file)
 
-	// Click Ripple Button
-	c.clickElement(page, "#column-left > div > div > div.sidebar-header.can-have-forum > div.sidebar-header__btn-container > button")
-
-	time.Sleep(1 * time.Second)
-
-	isSetting := c.gotoSetting(page)
-
-	if !isSetting {
+	if !isLogin {
 		return
 	}
 
-	time.Sleep(1 * time.Second)
+	helper.InputTerminal("Just press enter to next account or completing free roam...")
 
-	// Click Edit Profile
-	c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.settings-container.profile-container.is-collapsed.active > div.sidebar-header > button:nth-child(3)")
-
-	time.Sleep(1 * time.Second)
-
-	helper.ClearInputTerminal()
-
-	firstName := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(2) > div.sidebar-left-section > div > div.input-wrapper > div:nth-child(1) > div.input-field-input")
-
-	lastName := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(2) > div.sidebar-left-section > div > div.input-wrapper > div:nth-child(2) > div.input-field-input")
-
-	currentUsername := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(3) > div.sidebar-left-section > div > div.input-wrapper > div > input")
-
-	isComplete := false
-	for !isComplete {
-
-		helper.PrettyLog("info", fmt.Sprintf("| %s | Full Name: %s", c.phoneNumber, fmt.Sprintf("%s %s", firstName, lastName)))
-
-		helper.PrettyLog("info", fmt.Sprintf("| %s | Current Username: %s", c.phoneNumber, currentUsername))
-
-		// Input Username
-		username := strings.TrimSpace(helper.InputTerminal("Input Username: "))
-
-		helper.PrettyLog("info", fmt.Sprintf("| %s | Checking Username...", c.phoneNumber))
-
-		c.removeTextFormInput(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(3) > div.sidebar-left-section > div > div.input-wrapper > div > input")
-
-		c.inputText(page, username, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(3) > div.sidebar-left-section > div > div.input-wrapper > div > input")
-
-		time.Sleep(2 * time.Second)
-
-		isUsernameAvailable := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(3) > div.sidebar-left-section > div > div.input-wrapper > div > label > span")
-
-		// Check Username
-		if isUsernameAvailable == "Username is already taken" || isUsernameAvailable == "Username is invalid" {
-			helper.PrettyLog("error", fmt.Sprintf("| %s | %s, Try Another Username", c.phoneNumber, isUsernameAvailable))
-			c.removeTextFormInput(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(3) > div.sidebar-left-section > div > div.input-wrapper > div > input")
-			continue
-		}
-
-		helper.PrettyLog("info", fmt.Sprintf("| %s | Username: %s Available", c.phoneNumber, username))
-
-		time.Sleep(1 * time.Second)
-
-		c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > button")
-
-		time.Sleep(1 * time.Second)
-
-		helper.PrettyLog("success", fmt.Sprintf("| %s | Username Successfully Set", c.phoneNumber))
-
-		isComplete = true
-	}
+	return
 }
 
-func (c *Client) processStartBotWithAutoRef(file fs.DirEntry, botUsername string, refUrl string) {
+func (c *Client) processGetQueryData(file fs.DirEntry) {
+	botUsername := config.String(fmt.Sprintf("BOT_LIST.%v.%s.BOT_USERNAME", indexBotList, selectedBotList))
+
 	page := c.Browser.MustPage()
 
 	// Set Local Storage
-	c.setLocalStorage(page, file)
+	isLogin := c.processSetLocalStorage(page, file)
 
-	// Search Bot
-	c.searchBot(page, "+42777")
-
-	// Send Message Ref Url
-	c.sendMessage(page, refUrl, false)
-
-	time.Sleep(3 * time.Second)
-
-	// Click Launch App
-	c.clickElement(page, fmt.Sprintf(`a.anchor-url[href="%v"]`, refUrl))
-
-	c.popupLaunchBot(page)
-
-	time.Sleep(3 * time.Second)
-
-	isIframe := c.checkElement(page, ".payment-verification")
-
-	if isIframe {
-		helper.PrettyLog("success", "Launch Bot")
-
-		iframe := page.MustElement(".payment-verification")
-
-		iframePage := iframe.MustFrame()
-
-		iframePage.MustWaitDOMStable()
-
-		selectors := config.Strings("FIRST_LAUNCH_BOT_SELECTOR")
-
-		helper.PrettyLog("info", fmt.Sprintf("| %s | Process Clicking Selector Bot...", c.phoneNumber))
-
-		for _, selector := range selectors {
-			c.clickElement(iframePage, selector)
-			time.Sleep(2 * time.Second)
-			iframePage.MustWaitDOMStable()
-		}
-
-		helper.PrettyLog("success", fmt.Sprintf("| %s | Clicking Selector Bot Completed...", c.phoneNumber))
-
-		time.Sleep(5 * time.Second)
+	if !isLogin {
+		return
 	}
-}
-
-func (c *Client) processGetQueryData(file fs.DirEntry, botUsername string) {
-	page := c.Browser.MustPage()
-
-	// Set Local Storage
-	c.setLocalStorage(page, file)
 
 	// Search Bot
 	c.searchBot(page, botUsername)
@@ -580,5 +522,214 @@ func (c *Client) processGetQueryData(file fs.DirEntry, botUsername string) {
 		}
 	} else {
 		helper.PrettyLog("error", fmt.Sprintf("| %s | Failed To Get Query Data", c.phoneNumber))
+	}
+}
+
+func (c *Client) processGetDetailAccount(file fs.DirEntry) {
+	page := c.Browser.MustPage()
+
+	// Set Local Storage
+	isLogin := c.processSetLocalStorage(page, file)
+
+	if !isLogin {
+		return
+	}
+
+	// Search Bot
+	c.searchBot(page, "userinfobot")
+
+	// Send Message
+	c.sendMessage(page, "/start", true)
+
+	// Get Message
+	message := c.getLastChat(page)
+
+	result := make(map[string]string)
+
+	// Pisahkan text menjadi baris-baris
+	lines := strings.Split(message, "\n")
+
+	// Iterasi setiap baris
+	for _, line := range lines {
+		// Jika baris mengandung ": ", kita pisah berdasarkan itu
+		if strings.Contains(line, ": ") {
+			parts := strings.SplitN(line, ": ", 2) // Split menjadi 2 bagian: kunci dan nilai
+			key := parts[0]                        // Bagian pertama adalah kunci
+			value := parts[1]                      // Bagian kedua adalah nilai
+			result[key] = value                    // Masukkan ke dalam map
+		} else if strings.HasPrefix(line, "@") {
+			// Jika baris diawali dengan @, hapus @ dan simpan username
+			result["username"] = strings.TrimPrefix(strings.TrimSpace(line), "@")
+		}
+	}
+
+	filePath := fmt.Sprintf("%s/detail_account_%s.json", detailAccountPath, c.phoneNumber)
+
+	helper.SaveFileJson(filePath, result)
+
+	if helper.CheckFileOrFolder(filePath) {
+		helper.PrettyLog("success", fmt.Sprintf(fmt.Sprintf("| %s | Detail Account Successfully Saved", c.phoneNumber)))
+	} else {
+		helper.PrettyLog("error", fmt.Sprintf("| %s | Detail Account Failed Saved", c.phoneNumber))
+	}
+}
+
+func (c *Client) processJoinSkibidiSigmaCode(file fs.DirEntry) {
+	page := c.Browser.MustPage()
+
+	// Set Local Storage
+	isLogin := c.processSetLocalStorage(page, file)
+
+	if !isLogin {
+		return
+	}
+
+	// Search
+	c.searchBot(page, "skibidi_sigma_code")
+
+	helper.PrettyLog("info", fmt.Sprintf("| %s | Joining Skibidi Sigma Code Channel...", c.phoneNumber))
+
+	// Click Subscribe
+	c.clickElement(page, "#column-center > div > div > div.sidebar-header.topbar.has-avatar > div.chat-info-container > div.chat-utils > button.btn-primary.btn-color-primary.chat-join.rp")
+
+	helper.PrettyLog("success", fmt.Sprintf("| %s | Joining Skibidi Sigma Code Channel Successfully...", c.phoneNumber))
+}
+
+func (c *Client) processStartBotWithAutoRef(file fs.DirEntry) {
+
+	refUrl := config.String(fmt.Sprintf("BOT_LIST.%v.%s.REF_URL", indexBotList, selectedBotList))
+	selectors := config.Strings(fmt.Sprintf("BOT_LIST.%v.%s.CLICKABLE_SELECTOR", indexBotList, selectedBotList))
+
+	page := c.Browser.MustPage()
+
+	// Set Local Storage
+	isLogin := c.processSetLocalStorage(page, file)
+
+	if !isLogin {
+		return
+	}
+
+	// Search Bot
+	c.searchBot(page, "+42777")
+
+	// Send Message Ref Url
+	c.sendMessage(page, refUrl, false)
+
+	time.Sleep(3 * time.Second)
+
+	// Click Launch App
+	c.clickElement(page, fmt.Sprintf(`a.anchor-url[href="%v"]`, refUrl))
+
+	c.popupLaunchBot(page)
+
+	time.Sleep(3 * time.Second)
+
+	isIframe := c.checkElement(page, ".payment-verification")
+
+	if isIframe {
+		helper.PrettyLog("success", "Launch Bot")
+
+		iframe := page.MustElement(".payment-verification")
+
+		iframePage := iframe.MustFrame()
+
+		iframePage.MustWaitDOMStable()
+
+		helper.PrettyLog("info", fmt.Sprintf("| %s | Process Clicking Selector Bot...", c.phoneNumber))
+
+		for _, selector := range selectors {
+			c.clickElement(iframePage, selector)
+			time.Sleep(2 * time.Second)
+			iframePage.MustWaitDOMStable()
+		}
+
+		helper.PrettyLog("success", fmt.Sprintf("| %s | Clicking Selector Bot Completed...", c.phoneNumber))
+
+		time.Sleep(5 * time.Second)
+	}
+}
+
+func (c *Client) processSetAccountUsername(file fs.DirEntry) {
+	page := c.Browser.MustPage()
+
+	// Set Local Storage
+	isLogin := c.processSetLocalStorage(page, file)
+
+	if !isLogin {
+		return
+	}
+
+	// Click Ripple Button
+	c.clickElement(page, "#column-left > div > div > div.sidebar-header.can-have-forum > div.sidebar-header__btn-container > button")
+
+	time.Sleep(1 * time.Second)
+
+	isSetting := c.gotoSetting(page)
+
+	if !isSetting {
+		return
+	}
+
+	time.Sleep(1 * time.Second)
+
+	// Click Edit Profile
+	c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.settings-container.profile-container.is-collapsed.active > div.sidebar-header > button:nth-child(3)")
+
+	time.Sleep(1 * time.Second)
+
+	firstName := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(2) > div.sidebar-left-section > div > div.input-wrapper > div:nth-child(1) > div.input-field-input")
+
+	lastName := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(2) > div.sidebar-left-section > div > div.input-wrapper > div:nth-child(2) > div.input-field-input")
+
+	currentUsername := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrolled-bottom.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(3) > div.sidebar-left-section > div > div.input-wrapper > div > input")
+
+	isComplete := false
+	for !isComplete {
+
+		helper.PrettyLog("info", fmt.Sprintf("| %s | Full Name: %s", c.phoneNumber, fmt.Sprintf("%s %s", firstName, lastName)))
+
+		helper.PrettyLog("info", fmt.Sprintf("| %s | Current Username: %s", c.phoneNumber, currentUsername))
+
+		if currentUsername != "" {
+			helper.PrettyLog("info", "Are You Sure Want To Change Current Username?")
+
+			makeSure := strings.TrimSpace(helper.InputTerminal("Input Choice (y/n) (default = Next Account): "))
+
+			if makeSure != "y" || makeSure != "Y" {
+				return
+			}
+		}
+
+		// Input Username
+		username := strings.TrimSpace(helper.InputTerminal("Input Username: "))
+
+		helper.PrettyLog("info", fmt.Sprintf("| %s | Checking Username...", c.phoneNumber))
+
+		c.removeTextFormInput(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(3) > div.sidebar-left-section > div > div.input-wrapper > div > input")
+
+		c.inputText(page, username, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(3) > div.sidebar-left-section > div > div.input-wrapper > div > input")
+
+		time.Sleep(2 * time.Second)
+
+		isUsernameAvailable := c.getText(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(3) > div.sidebar-left-section > div > div.input-wrapper > div > label > span")
+
+		// Check Username
+		if isUsernameAvailable == "Username is already taken" || isUsernameAvailable == "Username is invalid" {
+			helper.PrettyLog("error", fmt.Sprintf("| %s | %s, Try Another Username", c.phoneNumber, isUsernameAvailable))
+			c.removeTextFormInput(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrolled-top.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > div > div:nth-child(3) > div.sidebar-left-section > div > div.input-wrapper > div > input")
+			continue
+		}
+
+		helper.PrettyLog("info", fmt.Sprintf("| %s | Username: %s Available", c.phoneNumber, username))
+
+		time.Sleep(1 * time.Second)
+
+		c.clickElement(page, "#column-left > div > div.tabs-tab.sidebar-slider-item.scrollable-y-bordered.edit-profile-container.active > div.sidebar-content > button")
+
+		time.Sleep(1 * time.Second)
+
+		helper.PrettyLog("success", fmt.Sprintf("| %s | Username Successfully Set", c.phoneNumber))
+
+		isComplete = true
 	}
 }

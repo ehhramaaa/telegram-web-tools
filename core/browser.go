@@ -11,6 +11,7 @@ import (
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
 	"github.com/go-rod/rod/lib/utils"
+	"github.com/gookit/config/v2"
 )
 
 func initializeBrowser() *rod.Browser {
@@ -18,7 +19,7 @@ func initializeBrowser() *rod.Browser {
 
 	launchOptions := launcher.New().
 		Set("load-extension", extensionPath).
-		Headless(isHeadless).
+		Headless(config.Bool("HEADLESS_MODE")).
 		MustLaunch()
 
 	browser := rod.New().ControlURL(launchOptions).MustConnect()

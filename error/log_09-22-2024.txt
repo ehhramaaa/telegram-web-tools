@@ -1,0 +1,23 @@
+| 10:55:12 | Invalid selection: n. Please try again.
+| 13:28:53 | Country not found. Please try again.
+| 13:33:23 | Invalid selection
+| 13:33:25 | Invalid selection
+| 13:33:27 | Invalid selection
+| 13:33:59 | Invalid selection
+| 13:37:30 | Country not found. Please try again.
+| 14:09:08 | Invalid selection
+| 14:09:08 | Invalid selection
+| 14:19:02 | Invalid selection
+| 14:19:02 | Invalid selection
+| 14:20:02 | Invalid selection
+| 14:20:02 | Invalid selection
+| 14:20:38 | Invalid selection
+| 14:20:38 | Invalid selection
+| 14:21:14 | Invalid selection
+| 14:21:14 | Invalid selection
+| 14:21:27 | Invalid selection
+| 14:21:27 | Invalid selection
+| 14:22:14 | Invalid selection
+| 14:22:14 | Invalid selection
+| 14:38:38 | Invalid selection
+| 17:56:17 | Invalid selection: n. Please try again.
