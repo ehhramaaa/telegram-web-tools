@@ -631,6 +631,9 @@ func (c *Client) processStartBotWithAutoRef(file fs.DirEntry) {
 		helper.PrettyLog("info", fmt.Sprintf("| %s | Process Clicking Selector Bot...", c.phoneNumber))
 
 		for _, selector := range selectors {
+			if selector == "" {
+				break
+			}
 			c.clickElement(iframePage, selector)
 			time.Sleep(2 * time.Second)
 			iframePage.MustWaitNavigation()
